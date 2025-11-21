@@ -1,0 +1,1634 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>매매 전략 설정 - AI 주식 자동매매</title>
+
+    <!-- Google Fonts - Inter for modern typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Design System CSS (in order) -->
+    <link rel="stylesheet" href="../design-tokens.css">
+    <link rel="stylesheet" href="../components.css">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 28px;
+        }
+
+        .auto-trading-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background: #ccc;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: #4CAF50;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: white;
+            top: 2px;
+            left: 2px;
+            transition: left 0.3s;
+        }
+
+        .toggle-switch.active::after {
+            left: 32px;
+        }
+
+        /* 프리셋 관리 섹션 */
+        .preset-management {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .preset-management h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 22px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .preset-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .preset-save-row {
+            display: flex;
+            gap: 10px;
+            align-items: stretch;
+        }
+
+        .preset-input-group {
+            display: flex;
+            gap: 10px;
+            flex: 2;
+        }
+
+        .preset-input-group input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .preset-input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .preset-input-group .btn {
+            flex-shrink: 0;
+            min-width: 120px;
+            white-space: nowrap;
+        }
+
+        .preset-actions-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .preset-controls .btn-block {
+            width: 100%;
+            margin-top: 0;
+        }
+
+        .preset-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .preset-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .preset-item:hover {
+            border-color: #667eea;
+            background: #e9ecef;
+        }
+
+        .preset-item.active {
+            border-color: #667eea;
+            background: #e7eaff;
+        }
+
+        .preset-name {
+            font-weight: 600;
+            color: #333;
+            flex: 1;
+        }
+
+        .preset-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .preset-actions button {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .btn-load {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-load:hover {
+            background: #5568d3;
+        }
+
+        .btn-delete {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #da190b;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .strategy-section {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .strategy-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 22px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .strategy-select {
+            margin-bottom: 20px;
+        }
+
+        .strategy-select label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        .strategy-select select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .strategy-select select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .strategy-description {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            white-space: pre-line;
+            line-height: 1.6;
+            color: #555;
+        }
+
+        /* 자동매매 비율 설정 */
+        .auto-trade-ratio {
+            background: linear-gradient(135deg, #f0f4ff 0%, #fafbff 100%);
+            padding: 24px;
+            border-radius: 12px;
+            margin-top: 20px;
+            border: 2px solid #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.08);
+        }
+
+        .auto-trade-ratio h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .ratio-setting {
+            margin-bottom: 20px;
+        }
+
+        .ratio-setting > label {
+            display: block;
+            margin-bottom: 12px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-weight: 500;
+            color: #555;
+            padding: 10px 16px;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            transition: all 0.3s ease;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .radio-group label:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(102, 126, 234, 0.15);
+        }
+
+        .radio-group input[type="radio"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #667eea;
+            flex-shrink: 0;
+        }
+
+        .radio-group input[type="radio"]:checked + span {
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .radio-group label:has(input:checked) {
+            border-color: #667eea;
+            background: #e7eaff;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .slider-group {
+            margin-top: 16px;
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .slider-group label {
+            display: block;
+            margin-bottom: 12px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            position: relative;
+        }
+
+        .slider-container input[type="range"] {
+            flex: 1;
+            height: 10px;
+            border-radius: 5px;
+            outline: none;
+            -webkit-appearance: none;
+            background: #e0e0e0;
+            cursor: pointer;
+        }
+
+        .slider-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid #667eea;
+            cursor: grab;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .slider-container input[type="range"]::-webkit-slider-thumb:hover {
+            background: #667eea;
+            transform: scale(1.15);
+            box-shadow: 0 3px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .slider-container input[type="range"]::-webkit-slider-thumb:active {
+            cursor: grabbing;
+            transform: scale(1.25);
+        }
+
+        .slider-container input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid #667eea;
+            cursor: grab;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .slider-container input[type="range"]::-moz-range-thumb:hover {
+            background: #667eea;
+            transform: scale(1.15);
+        }
+
+        .slider-value {
+            min-width: 80px;
+            text-align: center;
+            font-weight: 800;
+            color: #667eea;
+            font-size: 20px;
+            padding: 8px 16px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #667eea;
+            box-shadow: 0 2px 4px rgba(102, 126, 234, 0.1);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .parameters {
+            margin-top: 20px;
+        }
+
+        .param-group {
+            margin-bottom: 20px;
+        }
+
+        .param-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        .param-description {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .param-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .param-group input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .param-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .param-value {
+            min-width: 80px;
+            text-align: right;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .btn-warning {
+            background: #ff9800;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #e68900;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 152, 0, 0.4);
+        }
+
+        .btn-block {
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .current-config {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .current-config h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+
+        .config-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .test-section {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .test-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .test-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .test-input input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .test-result {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            white-space: pre-line;
+            line-height: 1.6;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            display: none;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .back-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #6c757d;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            transition: background 0.3s;
+        }
+
+        .back-button:hover {
+            background: #5a6268;
+        }
+
+        /* 모달 스타일 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            color: #333;
+            font-size: 22px;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* 반응형 디자인 */
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .preset-controls {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .preset-list {
+                grid-template-columns: 1fr;
+            }
+
+            .radio-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-button">← 대시보드로 돌아가기</a>
+
+        <div class="header">
+            <h1>매매 전략 설정</h1>
+            <div class="auto-trading-toggle">
+                <span>자동 매매</span>
+                <div class="toggle-switch" id="autoTradingToggle"></div>
+            </div>
+        </div>
+
+        <!-- 프리셋 관리 섹션 -->
+        <div class="preset-management">
+            <h2>설정 프리셋 관리</h2>
+
+            <div class="preset-controls">
+                <!-- Row 1: Preset name input and save button -->
+                <div class="preset-save-row">
+                    <div class="preset-input-group">
+                        <input type="text" id="presetName" placeholder="프리셋 이름 입력 (예: 보수적 전략, 공격적 전략)">
+                        <button class="btn btn-success" onclick="savePreset()">프리셋 저장</button>
+                    </div>
+                </div>
+
+                <!-- Row 2: Primary action buttons -->
+                <div class="preset-actions-row">
+                    <button class="btn btn-primary" onclick="saveAllSettings()">
+                        모든 전략 설정 저장
+                    </button>
+                    <button class="btn btn-warning" onclick="resetToDefault()">
+                        기본값으로 초기화
+                    </button>
+                </div>
+            </div>
+
+            <div id="presetList" class="preset-list">
+                <!-- 동적으로 프리셋 목록 생성 -->
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <!-- 단기 매매 전략 섹션 -->
+            <div class="strategy-section">
+                <h2>단기 매매 전략</h2>
+
+                <div class="strategy-select">
+                    <label>전략 선택</label>
+                    <select id="shortTermStrategySelect">
+                        <option value="">로딩 중...</option>
+                    </select>
+                </div>
+
+                <div class="strategy-description" id="shortTermStrategyDescription">
+                    전략을 선택하세요.
+                </div>
+
+                <div class="parameters" id="shortTermParameters">
+                    <!-- 동적으로 파라미터 생성 -->
+                </div>
+
+                <!-- 자동매매 비율 설정 -->
+                <div class="auto-trade-ratio">
+                    <h3>자동매매 비율 설정</h3>
+
+                    <div class="ratio-setting">
+                        <label>보유 금액 기준</label>
+                        <div class="radio-group">
+                            <label>
+                                <input type="radio" name="shortTermBasis" value="total" checked>
+                                <span>평가금액 (주식 + 예수금)</span>
+                            </label>
+                            <label>
+                                <input type="radio" name="shortTermBasis" value="cash">
+                                <span>예수금만</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="slider-group">
+                        <label>자동매매 비율</label>
+                        <div class="slider-container">
+                            <input type="range" id="shortTermRatio" min="0" max="100" value="30" step="5">
+                            <span class="slider-value" id="shortTermRatioValue">30%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary btn-block" onclick="saveShortTermStrategy()">
+                    단기 전략 저장
+                </button>
+            </div>
+
+            <!-- 중기 매매 전략 섹션 -->
+            <div class="strategy-section">
+                <h2>중기 매매 전략</h2>
+
+                <div class="strategy-select">
+                    <label>전략 선택</label>
+                    <select id="mediumTermStrategySelect">
+                        <option value="">로딩 중...</option>
+                    </select>
+                </div>
+
+                <div class="strategy-description" id="mediumTermStrategyDescription">
+                    전략을 선택하세요.
+                </div>
+
+                <div class="parameters" id="mediumTermParameters">
+                    <!-- 동적으로 파라미터 생성 -->
+                </div>
+
+                <!-- 자동매매 비율 설정 -->
+                <div class="auto-trade-ratio">
+                    <h3>자동매매 비율 설정</h3>
+
+                    <div class="ratio-setting">
+                        <label>보유 금액 기준</label>
+                        <div class="radio-group">
+                            <label>
+                                <input type="radio" name="mediumTermBasis" value="total" checked>
+                                <span>평가금액 (주식 + 예수금)</span>
+                            </label>
+                            <label>
+                                <input type="radio" name="mediumTermBasis" value="cash">
+                                <span>예수금만</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="slider-group">
+                        <label>자동매매 비율</label>
+                        <div class="slider-container">
+                            <input type="range" id="mediumTermRatio" min="0" max="100" value="40" step="5">
+                            <span class="slider-value" id="mediumTermRatioValue">40%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary btn-block" onclick="saveMediumTermStrategy()">
+                    중기 전략 저장
+                </button>
+            </div>
+
+            <!-- 장기 매매 전략 섹션 -->
+            <div class="strategy-section">
+                <h2>장기 매매 전략</h2>
+
+                <div class="strategy-select">
+                    <label>전략 선택</label>
+                    <select id="longTermStrategySelect">
+                        <option value="">로딩 중...</option>
+                    </select>
+                </div>
+
+                <div class="strategy-description" id="longTermStrategyDescription">
+                    전략을 선택하세요.
+                </div>
+
+                <div class="parameters" id="longTermParameters">
+                    <!-- 동적으로 파라미터 생성 -->
+                </div>
+
+                <!-- 자동매매 비율 설정 -->
+                <div class="auto-trade-ratio">
+                    <h3>자동매매 비율 설정</h3>
+
+                    <div class="ratio-setting">
+                        <label>보유 금액 기준</label>
+                        <div class="radio-group">
+                            <label>
+                                <input type="radio" name="longTermBasis" value="total" checked>
+                                <span>평가금액 (주식 + 예수금)</span>
+                            </label>
+                            <label>
+                                <input type="radio" name="longTermBasis" value="cash">
+                                <span>예수금만</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="slider-group">
+                        <label>자동매매 비율</label>
+                        <div class="slider-container">
+                            <input type="range" id="longTermRatio" min="0" max="100" value="30" step="5">
+                            <span class="slider-value" id="longTermRatioValue">30%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary btn-block" onclick="saveLongTermStrategy()">
+                    장기 전략 저장
+                </button>
+            </div>
+
+            <!-- 매도 전략 섹션 -->
+            <div class="strategy-section">
+                <h2>매도 전략 설정</h2>
+
+                <div class="strategy-select">
+                    <label>전략 선택</label>
+                    <select id="sellStrategySelect">
+                        <option value="">로딩 중...</option>
+                    </select>
+                </div>
+
+                <div class="strategy-description" id="sellStrategyDescription">
+                    전략을 선택하세요.
+                </div>
+
+                <div class="parameters" id="sellParameters">
+                    <!-- 동적으로 파라미터 생성 -->
+                </div>
+
+                <button class="btn btn-primary btn-block" onclick="saveSellStrategy()">
+                    매도 전략 저장
+                </button>
+            </div>
+        </div>
+
+        <!-- 현재 설정 표시 -->
+        <div class="current-config">
+            <h2>현재 적용 중인 전략</h2>
+            <div class="config-display" id="currentConfigDisplay">
+                로딩 중...
+            </div>
+        </div>
+
+        <!-- 전략 테스트 섹션 -->
+        <div class="test-section">
+            <h2>전략 테스트</h2>
+            <div class="test-input">
+                <input type="text" id="testStockCode" placeholder="종목 코드 (예: 005930)">
+                <button class="btn btn-primary" onclick="testBuyStrategy()">매수 분석</button>
+            </div>
+            <div class="test-result" id="testResult"></div>
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <!-- 확인 모달 -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">확인</h3>
+            </div>
+            <div class="modal-body">
+                <p id="modalMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="confirmModalAction()">확인</button>
+                <button class="btn btn-warning" onclick="closeModal()">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '';
+        let token = localStorage.getItem('token');
+        let allStrategies = {};
+        let currentConfig = {};
+        let modalCallback = null;
+
+        // 페이지 로드 시 초기화
+        window.onload = async () => {
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            await loadStrategies();
+            await loadCurrentConfig();
+            loadPresets();
+            initializeSliders();
+        };
+
+        // 슬라이더 초기화
+        function initializeSliders() {
+            const sliders = ['shortTermRatio', 'mediumTermRatio', 'longTermRatio'];
+
+            sliders.forEach(sliderId => {
+                const slider = document.getElementById(sliderId);
+                const valueDisplay = document.getElementById(`${sliderId}Value`);
+
+                slider.addEventListener('input', (e) => {
+                    valueDisplay.textContent = `${e.target.value}%`;
+                });
+            });
+        }
+
+        // 프리셋 저장
+        function savePreset() {
+            const presetName = document.getElementById('presetName').value.trim();
+
+            if (!presetName) {
+                showNotification('프리셋 이름을 입력해주세요.', 'error');
+                return;
+            }
+
+            const preset = {
+                name: presetName,
+                config: getCurrentUISettings(),
+                timestamp: new Date().toISOString()
+            };
+
+            let presets = JSON.parse(localStorage.getItem('strategy_presets') || '[]');
+
+            // 동일한 이름의 프리셋이 있는지 확인
+            const existingIndex = presets.findIndex(p => p.name === presetName);
+
+            if (existingIndex >= 0) {
+                showModal(
+                    '프리셋 덮어쓰기',
+                    `"${presetName}" 프리셋이 이미 존재합니다. 덮어쓰시겠습니까?`,
+                    () => {
+                        presets[existingIndex] = preset;
+                        localStorage.setItem('strategy_presets', JSON.stringify(presets));
+                        loadPresets();
+                        showNotification('프리셋이 업데이트되었습니다.', 'success');
+                        document.getElementById('presetName').value = '';
+                    }
+                );
+            } else {
+                presets.push(preset);
+                localStorage.setItem('strategy_presets', JSON.stringify(presets));
+                loadPresets();
+                showNotification('프리셋이 저장되었습니다.', 'success');
+                document.getElementById('presetName').value = '';
+            }
+        }
+
+        // 현재 UI 설정 가져오기
+        function getCurrentUISettings() {
+            return {
+                shortTerm: {
+                    strategy: document.getElementById('shortTermStrategySelect').value,
+                    basis: document.querySelector('input[name="shortTermBasis"]:checked')?.value,
+                    ratio: document.getElementById('shortTermRatio').value,
+                    params: getStrategyParams('shortTermParameters')
+                },
+                mediumTerm: {
+                    strategy: document.getElementById('mediumTermStrategySelect').value,
+                    basis: document.querySelector('input[name="mediumTermBasis"]:checked')?.value,
+                    ratio: document.getElementById('mediumTermRatio').value,
+                    params: getStrategyParams('mediumTermParameters')
+                },
+                longTerm: {
+                    strategy: document.getElementById('longTermStrategySelect').value,
+                    basis: document.querySelector('input[name="longTermBasis"]:checked')?.value,
+                    ratio: document.getElementById('longTermRatio').value,
+                    params: getStrategyParams('longTermParameters')
+                },
+                sell: {
+                    strategy: document.getElementById('sellStrategySelect').value,
+                    params: getStrategyParams('sellParameters')
+                }
+            };
+        }
+
+        // 전략 파라미터 가져오기
+        function getStrategyParams(containerId) {
+            const params = {};
+            const paramInputs = document.querySelectorAll(`#${containerId} input[data-key]`);
+            paramInputs.forEach(input => {
+                params[input.dataset.key] = parseFloat(input.value);
+            });
+            return params;
+        }
+
+        // 프리셋 로드
+        function loadPresets() {
+            const presets = JSON.parse(localStorage.getItem('strategy_presets') || '[]');
+            const presetList = document.getElementById('presetList');
+
+            if (presets.length === 0) {
+                presetList.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">저장된 프리셋이 없습니다.</p>';
+                return;
+            }
+
+            presetList.innerHTML = presets.map((preset, index) => `
+                <div class="preset-item" id="preset-${index}">
+                    <span class="preset-name">${preset.name}</span>
+                    <div class="preset-actions">
+                        <button class="btn-load" onclick="loadPreset(${index})">불러오기</button>
+                        <button class="btn-delete" onclick="deletePreset(${index})">삭제</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 프리셋 불러오기
+        function loadPreset(index) {
+            const presets = JSON.parse(localStorage.getItem('strategy_presets') || '[]');
+            const preset = presets[index];
+
+            if (!preset) return;
+
+            showModal(
+                '프리셋 불러오기',
+                `"${preset.name}" 프리셋을 불러오시겠습니까? 현재 설정이 변경됩니다.`,
+                () => {
+                    applyPresetSettings(preset.config);
+                    showNotification('프리셋이 적용되었습니다.', 'success');
+
+                    // 활성 프리셋 표시
+                    document.querySelectorAll('.preset-item').forEach(item => {
+                        item.classList.remove('active');
+                    });
+                    document.getElementById(`preset-${index}`).classList.add('active');
+                }
+            );
+        }
+
+        // 프리셋 설정 적용
+        function applyPresetSettings(config) {
+            // 단기
+            if (config.shortTerm) {
+                document.getElementById('shortTermStrategySelect').value = config.shortTerm.strategy || '';
+                onShortTermStrategyChange(config.shortTerm.strategy);
+                if (config.shortTerm.basis) {
+                    document.querySelector(`input[name="shortTermBasis"][value="${config.shortTerm.basis}"]`).checked = true;
+                }
+                if (config.shortTerm.ratio) {
+                    document.getElementById('shortTermRatio').value = config.shortTerm.ratio;
+                    document.getElementById('shortTermRatioValue').textContent = `${config.shortTerm.ratio}%`;
+                }
+                if (config.shortTerm.params) {
+                    applyStrategyParams('shortTermParameters', config.shortTerm.params);
+                }
+            }
+
+            // 중기
+            if (config.mediumTerm) {
+                document.getElementById('mediumTermStrategySelect').value = config.mediumTerm.strategy || '';
+                onMediumTermStrategyChange(config.mediumTerm.strategy);
+                if (config.mediumTerm.basis) {
+                    document.querySelector(`input[name="mediumTermBasis"][value="${config.mediumTerm.basis}"]`).checked = true;
+                }
+                if (config.mediumTerm.ratio) {
+                    document.getElementById('mediumTermRatio').value = config.mediumTerm.ratio;
+                    document.getElementById('mediumTermRatioValue').textContent = `${config.mediumTerm.ratio}%`;
+                }
+                if (config.mediumTerm.params) {
+                    applyStrategyParams('mediumTermParameters', config.mediumTerm.params);
+                }
+            }
+
+            // 장기
+            if (config.longTerm) {
+                document.getElementById('longTermStrategySelect').value = config.longTerm.strategy || '';
+                onLongTermStrategyChange(config.longTerm.strategy);
+                if (config.longTerm.basis) {
+                    document.querySelector(`input[name="longTermBasis"][value="${config.longTerm.basis}"]`).checked = true;
+                }
+                if (config.longTerm.ratio) {
+                    document.getElementById('longTermRatio').value = config.longTerm.ratio;
+                    document.getElementById('longTermRatioValue').textContent = `${config.longTerm.ratio}%`;
+                }
+                if (config.longTerm.params) {
+                    applyStrategyParams('longTermParameters', config.longTerm.params);
+                }
+            }
+
+            // 매도
+            if (config.sell) {
+                document.getElementById('sellStrategySelect').value = config.sell.strategy || '';
+                onSellStrategyChange(config.sell.strategy);
+                if (config.sell.params) {
+                    applyStrategyParams('sellParameters', config.sell.params);
+                }
+            }
+        }
+
+        // 파라미터 적용
+        function applyStrategyParams(containerId, params) {
+            setTimeout(() => {
+                Object.entries(params).forEach(([key, value]) => {
+                    const input = document.querySelector(`#${containerId} input[data-key="${key}"]`);
+                    if (input) {
+                        input.value = value;
+                        const valueDisplay = input.parentElement.querySelector('.param-value');
+                        if (valueDisplay) {
+                            valueDisplay.textContent = value;
+                        }
+                    }
+                });
+            }, 100);
+        }
+
+        // 프리셋 삭제
+        function deletePreset(index) {
+            const presets = JSON.parse(localStorage.getItem('strategy_presets') || '[]');
+            const preset = presets[index];
+
+            if (!preset) return;
+
+            showModal(
+                '프리셋 삭제',
+                `"${preset.name}" 프리셋을 삭제하시겠습니까?`,
+                () => {
+                    presets.splice(index, 1);
+                    localStorage.setItem('strategy_presets', JSON.stringify(presets));
+                    loadPresets();
+                    showNotification('프리셋이 삭제되었습니다.', 'success');
+                }
+            );
+        }
+
+        // 모든 설정 저장
+        async function saveAllSettings() {
+            showModal(
+                '모든 설정 저장',
+                '모든 전략 설정을 서버에 저장하시겠습니까?',
+                async () => {
+                    try {
+                        await saveShortTermStrategy(false);
+                        await saveMediumTermStrategy(false);
+                        await saveLongTermStrategy(false);
+                        await saveSellStrategy(false);
+                        showNotification('모든 설정이 저장되었습니다.', 'success');
+                        await loadCurrentConfig();
+                    } catch (error) {
+                        console.error('전체 저장 실패:', error);
+                        showNotification('설정 저장 중 오류가 발생했습니다.', 'error');
+                    }
+                }
+            );
+        }
+
+        // 기본값으로 초기화
+        function resetToDefault() {
+            showModal(
+                '기본값 초기화',
+                '모든 설정을 기본값으로 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
+                () => {
+                    // UI 초기화
+                    document.getElementById('shortTermStrategySelect').selectedIndex = 0;
+                    document.getElementById('mediumTermStrategySelect').selectedIndex = 0;
+                    document.getElementById('longTermStrategySelect').selectedIndex = 0;
+                    document.getElementById('sellStrategySelect').selectedIndex = 0;
+
+                    // 비율 초기화
+                    document.getElementById('shortTermRatio').value = 30;
+                    document.getElementById('shortTermRatioValue').textContent = '30%';
+                    document.getElementById('mediumTermRatio').value = 40;
+                    document.getElementById('mediumTermRatioValue').textContent = '40%';
+                    document.getElementById('longTermRatio').value = 30;
+                    document.getElementById('longTermRatioValue').textContent = '30%';
+
+                    // 라디오 버튼 초기화
+                    document.querySelectorAll('input[type="radio"][value="total"]').forEach(radio => {
+                        radio.checked = true;
+                    });
+
+                    showNotification('기본값으로 초기화되었습니다.', 'success');
+                }
+            );
+        }
+
+        // 모달 표시
+        function showModal(title, message, callback) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').textContent = message;
+            document.getElementById('confirmModal').style.display = 'block';
+            modalCallback = callback;
+        }
+
+        // 모달 닫기
+        function closeModal() {
+            document.getElementById('confirmModal').style.display = 'none';
+            modalCallback = null;
+        }
+
+        // 모달 확인
+        function confirmModalAction() {
+            if (modalCallback) {
+                modalCallback();
+            }
+            closeModal();
+        }
+
+        // 모든 전략 로드
+        async function loadStrategies() {
+            try {
+                const response = await fetch(`${API_BASE}/api/strategy/list`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    allStrategies = data.strategies;
+                    populateStrategySelects();
+                }
+            } catch (error) {
+                console.error('전략 로드 실패:', error);
+            }
+        }
+
+        // 전략 선택 드롭다운 채우기
+        function populateStrategySelects() {
+            const shortTermSelect = document.getElementById('shortTermStrategySelect');
+            const mediumTermSelect = document.getElementById('mediumTermStrategySelect');
+            const longTermSelect = document.getElementById('longTermStrategySelect');
+            const sellSelect = document.getElementById('sellStrategySelect');
+
+            // 매수 전략 (단기/중기/장기)
+            const buyOptions = '<option value="">전략을 선택하세요</option>' +
+                Object.entries(allStrategies.buy_strategies || {}).map(([key, strategy]) =>
+                    `<option value="${key}">${strategy.name}</option>`
+                ).join('');
+
+            shortTermSelect.innerHTML = buyOptions;
+            mediumTermSelect.innerHTML = buyOptions;
+            longTermSelect.innerHTML = buyOptions;
+
+            // 매도 전략
+            sellSelect.innerHTML = '<option value="">전략을 선택하세요</option>' +
+                Object.entries(allStrategies.sell_strategies || {}).map(([key, strategy]) =>
+                    `<option value="${key}">${strategy.name}</option>`
+                ).join('');
+
+            // 이벤트 리스너
+            shortTermSelect.addEventListener('change', (e) => onShortTermStrategyChange(e.target.value));
+            mediumTermSelect.addEventListener('change', (e) => onMediumTermStrategyChange(e.target.value));
+            longTermSelect.addEventListener('change', (e) => onLongTermStrategyChange(e.target.value));
+            sellSelect.addEventListener('change', (e) => onSellStrategyChange(e.target.value));
+        }
+
+        // 현재 설정 로드
+        async function loadCurrentConfig() {
+            try {
+                const response = await fetch(`${API_BASE}/api/strategy/current`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    currentConfig = data.config;
+                    updateConfigDisplay();
+                    applyCurrentConfig();
+                }
+            } catch (error) {
+                console.error('현재 설정 로드 실패:', error);
+            }
+        }
+
+        // 현재 설정을 UI에 적용
+        function applyCurrentConfig() {
+            const autoTradingToggle = document.getElementById('autoTradingToggle');
+
+            // 자동 매매 토글
+            if (currentConfig.auto_trading_enabled) {
+                autoTradingToggle.classList.add('active');
+            }
+
+            // 기존 매수/매도 전략 적용 로직...
+        }
+
+        // 설정 표시 업데이트
+        function updateConfigDisplay() {
+            const display = document.getElementById('currentConfigDisplay');
+            display.textContent = JSON.stringify(currentConfig, null, 2);
+        }
+
+        // 단기 전략 변경
+        function onShortTermStrategyChange(strategyName) {
+            onStrategyChange(strategyName, 'buy', 'shortTermStrategyDescription', 'shortTermParameters');
+        }
+
+        // 중기 전략 변경
+        function onMediumTermStrategyChange(strategyName) {
+            onStrategyChange(strategyName, 'buy', 'mediumTermStrategyDescription', 'mediumTermParameters');
+        }
+
+        // 장기 전략 변경
+        function onLongTermStrategyChange(strategyName) {
+            onStrategyChange(strategyName, 'buy', 'longTermStrategyDescription', 'longTermParameters');
+        }
+
+        // 매도 전략 변경
+        function onSellStrategyChange(strategyName) {
+            onStrategyChange(strategyName, 'sell', 'sellStrategyDescription', 'sellParameters');
+        }
+
+        // 전략 변경 공통 함수
+        function onStrategyChange(strategyName, strategyType, descriptionId, parametersId) {
+            if (!strategyName) return;
+
+            const strategiesKey = strategyType === 'buy' ? 'buy_strategies' : 'sell_strategies';
+            const strategy = allStrategies[strategiesKey]?.[strategyName];
+            if (!strategy) return;
+
+            // 설명 표시
+            document.getElementById(descriptionId).textContent = strategy.description;
+
+            // 파라미터 UI 생성
+            const paramsContainer = document.getElementById(parametersId);
+            paramsContainer.innerHTML = '<h3 style="margin-bottom: 15px;">파라미터 설정</h3>';
+
+            for (const [paramKey, paramDef] of Object.entries(strategy.parameters || {})) {
+                const paramGroup = createParameterInput(paramKey, paramDef, null);
+                paramsContainer.appendChild(paramGroup);
+            }
+        }
+
+        // 파라미터 입력 UI 생성
+        function createParameterInput(key, paramDef, currentParams) {
+            const group = document.createElement('div');
+            group.className = 'param-group';
+
+            const label = document.createElement('label');
+            label.textContent = paramDef.name;
+            group.appendChild(label);
+
+            const description = document.createElement('div');
+            description.className = 'param-description';
+            description.textContent = paramDef.description;
+            group.appendChild(description);
+
+            const inputGroup = document.createElement('div');
+            inputGroup.className = 'param-input-group';
+
+            const input = document.createElement('input');
+            input.type = paramDef.type === 'int' ? 'number' : 'number';
+            input.step = paramDef.type === 'float' ? '0.1' : '1';
+            input.min = paramDef.min;
+            input.max = paramDef.max;
+            input.value = currentParams?.[key] ?? paramDef.default;
+            input.id = `param_${key}`;
+            input.dataset.key = key;
+
+            const valueDisplay = document.createElement('span');
+            valueDisplay.className = 'param-value';
+            valueDisplay.textContent = input.value;
+
+            input.addEventListener('input', (e) => {
+                valueDisplay.textContent = e.target.value;
+            });
+
+            inputGroup.appendChild(input);
+            inputGroup.appendChild(valueDisplay);
+            group.appendChild(inputGroup);
+
+            return group;
+        }
+
+        // 단기 전략 저장
+        async function saveShortTermStrategy(showMsg = true) {
+            const basis = document.querySelector('input[name="shortTermBasis"]:checked')?.value;
+            const ratio = parseInt(document.getElementById('shortTermRatio').value);
+            return await saveStrategy('shortTermStrategySelect', 'shortTermParameters', 'buy', '단기', showMsg, basis, ratio);
+        }
+
+        // 중기 전략 저장
+        async function saveMediumTermStrategy(showMsg = true) {
+            const basis = document.querySelector('input[name="mediumTermBasis"]:checked')?.value;
+            const ratio = parseInt(document.getElementById('mediumTermRatio').value);
+            return await saveStrategy('mediumTermStrategySelect', 'mediumTermParameters', 'buy', '중기', showMsg, basis, ratio);
+        }
+
+        // 장기 전략 저장
+        async function saveLongTermStrategy(showMsg = true) {
+            const basis = document.querySelector('input[name="longTermBasis"]:checked')?.value;
+            const ratio = parseInt(document.getElementById('longTermRatio').value);
+            return await saveStrategy('longTermStrategySelect', 'longTermParameters', 'buy', '장기', showMsg, basis, ratio);
+        }
+
+        // 매도 전략 저장
+        async function saveSellStrategy(showMsg = true) {
+            return await saveStrategy('sellStrategySelect', 'sellParameters', 'sell', '매도', showMsg);
+        }
+
+        // 전략 저장 공통 함수
+        async function saveStrategy(selectId, parametersId, strategyType, displayName, showMsg, allocationBasis = null, allocationRatio = null) {
+            const strategyName = document.getElementById(selectId).value;
+            if (!strategyName) {
+                if (showMsg) showNotification('전략을 선택해주세요.', 'error');
+                return;
+            }
+
+            const params = {};
+            const paramInputs = document.querySelectorAll(`#${parametersId} input[data-key]`);
+            paramInputs.forEach(input => {
+                params[input.dataset.key] = parseFloat(input.value);
+            });
+
+            // Build request body
+            const requestBody = {
+                strategy_name: strategyName,
+                params: params
+            };
+
+            // Add allocation ratio information for buy strategies
+            if (strategyType === 'buy' && allocationBasis && allocationRatio !== null) {
+                requestBody.allocation_basis = allocationBasis;
+                requestBody.allocation_ratio = allocationRatio;
+            }
+
+            try {
+                const endpoint = strategyType === 'buy' ? 'buy' : 'sell';
+                const response = await fetch(`${API_BASE}/api/strategy/${endpoint}/set`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    if (showMsg) showNotification(`${displayName} 전략이 저장되었습니다.`, 'success');
+                    await loadCurrentConfig();
+                } else {
+                    if (showMsg) showNotification(data.message, 'error');
+                }
+            } catch (error) {
+                console.error('저장 실패:', error);
+                if (showMsg) showNotification('저장에 실패했습니다.', 'error');
+                throw error;
+            }
+        }
+
+        // 자동 매매 토글
+        document.getElementById('autoTradingToggle').addEventListener('click', async function() {
+            const isActive = this.classList.contains('active');
+            const newState = !isActive;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/strategy/auto-trading/toggle`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ enabled: newState })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    this.classList.toggle('active');
+                    showNotification(data.message, 'success');
+                }
+            } catch (error) {
+                console.error('토글 실패:', error);
+            }
+        });
+
+        // 전략 테스트
+        async function testBuyStrategy() {
+            const stockCode = document.getElementById('testStockCode').value;
+            if (!stockCode) {
+                showNotification('종목 코드를 입력해주세요.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/strategy/analyze-buy`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ stock_code: stockCode })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    const result = document.getElementById('testResult');
+                    result.innerHTML = `
+<strong>분석 결과:</strong>
+
+매수 판단: ${data.analysis.should_buy ? '✅ YES' : '❌ NO'}
+신뢰도: ${(data.analysis.confidence * 100).toFixed(1)}%
+추천 수량: ${data.analysis.recommended_quantity}주
+목표가: ${data.analysis.target_price?.toLocaleString()}원
+
+${data.analysis.reason}
+
+<strong>현재가 정보:</strong>
+현재가: ${data.stock_info.current_price?.toLocaleString()}원
+등락률: ${data.stock_info.change_rate}%
+                    `;
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            } catch (error) {
+                console.error('테스트 실패:', error);
+                showNotification('테스트에 실패했습니다.', 'error');
+            }
+        }
+
+        // 알림 표시
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.style.background = type === 'success' ? '#4CAF50' : '#f44336';
+            notification.classList.add('show');
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // 모달 외부 클릭 시 닫기
+        window.onclick = function(event) {
+            const modal = document.getElementById('confirmModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>

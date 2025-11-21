@@ -1,0 +1,524 @@
+{
+  "info": {
+    "_postman_id": "dart-api-collection-2024",
+    "name": "Open DART API Collection",
+    "description": "Korean Financial Supervisory Service Electronic Disclosure System API\nBase URL: https://opendart.fss.or.kr/api",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Company Information",
+      "item": [
+        {
+          "name": "Get Company by Code",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://opendart.fss.or.kr/api/company.json?crtfc_key={{api_key}}&corp_code=00126380",
+              "protocol": "https",
+              "host": ["opendart", "fss", "or", "kr"],
+              "path": ["api", "company.json"],
+              "query": [
+                {
+                  "key": "crtfc_key",
+                  "value": "{{api_key}}",
+                  "description": "API authentication key"
+                },
+                {
+                  "key": "corp_code",
+                  "value": "00126380",
+                  "description": "8-digit corporate code (Samsung Electronics)"
+                }
+              ]
+            },
+            "description": "Get company information by corporate code\n\nExample: 00126380 = Samsung Electronics (삼성전자)"
+          },
+          "response": []
+        },
+        {
+          "name": "Search Company by Name",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://opendart.fss.or.kr/api/companysearch.json?crtfc_key={{api_key}}&corp_name=삼성&page_no=1&page_count=10",
+              "protocol": "https",
+              "host": ["opendart", "fss", "or", "kr"],
+              "path": ["api", "companysearch.json"],
+              "query": [
+                {
+                  "key": "crtfc_key",
+                  "value": "{{api_key}}"
+                },
+                {
+                  "key": "corp_name",
+                  "value": "삼성",
+                  "description": "Company name in Korean"
+                },
+                {
+                  "key": "page_no",
+                  "value": "1",
+                  "description": "Page number (starts at 1)"
+                },
+                {
+                  "key": "page_count",
+                  "value": "10",
+                  "description": "Results per page (1-100)"
+                }
+              ]
+            },
+            "description": "Search companies by name with pagination"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Company List (Download)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://opendart.fss.or.kr/api/corpCode.json?crtfc_key={{api_key}}",
+              "protocol": "https",
+              "host": ["opendart", "fss", "or", "kr"],
+              "path": ["api", "corpCode.json"],
+              "query": [
+                {
+                  "key": "crtfc_key",
+                  "value": "{{api_key}}"
+                }
+              ]
+            },
+            "description": "Download complete list of all companies\n\nReturns: Zip file with company list (corp_code and stock_code mapping)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Financial Statements",
+      "item": [
+        {
+          "name": "Get Financial Statements (Annual 2023)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json?crtfc_key={{api_key}}&corp_code=00126380&bsns_year=2023&reprt_code=11011&fs_div=1001",
+              "protocol": "https",
+              "host": ["opendart", "fss", "or", "kr"],
+              "path": ["api", "fnlttSinglAcntAll.json"],
+              "query": [
+                {
+                  "key": "crtfc_key",
+                  "value": "{{api_key}}"
+                },
+                {
+                  "key": "corp_code",
+                  "value": "00126380",
+                  "description": "Corporate code"
+                },
+                {
+                  "key": "bsns_year",
+                  "value": "2023",
+                  "description": "Business year (YYYY)"
+                },
+                {
+                  "key": "reprt_code",
+                  "value": "11011",
+                  "description": "Report type: 11011=Annual, 11012=Half-year, 11013=Q3, 11014=Q1"
+                },
+                {
+                  "key": "fs_div",
+                  "value": "1001",
+                  "description": "1001=Consolidated (연결), 1002=Non-consolidated (별도)"
+                }
+              ]
+            },
+            "description": "Get complete financial statements including:\n- Balance Sheet (재무상태표)\n- Income Statement (손익계산서)\n- Cash Flow Statement (현금흐름표)\n- Statement of Changes in Equity"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Available Financial Statements",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://opendart.fss.or.kr/api/fnlttSinglAcnt.json?crtfc_key={{api_key}}&corp_code=00126380",
+              "protocol": "https",
+              "host": ["opendart", "fss", "or", "kr"],
+              "path": ["api", "fnlttSinglAcnt.json"],
+              "query": [
+                {
+                  "key": "crtfc_key",
+                  "value": "{{api_key}}"
+                },
+                {
+                  "key": "corp_code",
+                  "value": "00126380"
+                }
+              ]
+            },
+            "description": "Get list of available financial statements for a company\n\nUse this to discover which years and report types have data before requesting specific statements"
+          },
+          "response": []
+        },
+        {
+          "name": "Financial Statements - Half Year 2023",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json?crtfc_key={{api_key}}&corp_code=00126380&bsns_year=2023&reprt_code=11012&fs_div=1001",
+              "protocol": "https",
+              "host": ["opendart", "fss", "or", "kr"],
+              "path": ["api", "fnlttSinglAcntAll.json"],
+              "query": [
+                {
+                  "key": "crtfc_key",
+                  "value": "{{api_key}}"
+                },
+                {
+                  "key": "corp_code",
+                  "value": "00126380"
+                },
+                {
+                  "key": "bsns_year",
+                  "value": "2023"
+                },
+                {
+                  "key": "reprt_code",
+                  "value": "11012",
+                  "description": "Half-year report (반기보고서)"
+                },
+                {
+                  "key": "fs_div",
+                  "value": "1001"
+                }
+              ]
+            },
+            "description": "Get half-year financial statements (H1)"
+          },
+          "response": []
+        },
+        {
+          "name": "Financial Statements - Non-Consolidated",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json?crtfc_key={{api_key}}&corp_code=00126380&bsns_year=2023&reprt_code=11011&fs_div=1002",
+              "protocol": "https",
+              "host": ["opendart", "fss", "or", "kr"],
+              "path": ["api", "fnlttSinglAcntAll.json"],
+              "query": [
+                {
+                  "key": "crtfc_key",
+                  "value": "{{api_key}}"
+                },
+                {
+                  "key": "corp_code",
+                  "value": "00126380"
+                },
+                {
+                  "key": "bsns_year",
+                  "value": "2023"
+                },
+                {
+                  "key": "reprt_code",
+                  "value": "11011"
+                },
+                {
+                  "key": "fs_div",
+                  "value": "1002",
+                  "description": "Non-consolidated (별도) - Parent company only"
+                }
+              ]
+            },
+            "description": "Get non-consolidated financial statements (parent company only)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Filings & Reports",
+      "item": [
+        {
+          "name": "Get Latest Filings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://opendart.fss.or.kr/api/list.json?crtfc_key={{api_key}}&corp_code=00126380&pageNo=1&pageCount=10",
+              "protocol": "https",
+              "host": ["opendart", "fss", "or", "kr"],
+              "path": ["api", "list.json"],
+              "query": [
+                {
+                  "key": "crtfc_key",
+                  "value": "{{api_key}}"
+                },
+                {
+                  "key": "corp_code",
+                  "value": "00126380"
+                },
+                {
+                  "key": "pageNo",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "pageCount",
+                  "value": "10",
+                  "description": "Results per page (1-100)"
+                }
+              ]
+            },
+            "description": "Get list of filings including:\n- Annual reports (감사보고서)\n- Quarterly reports\n- Special disclosures\n- Insider trading reports"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Filing Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://opendart.fss.or.kr/api/document.json?crtfc_key={{api_key}}&receipt_no=20240314000123",
+              "protocol": "https",
+              "host": ["opendart", "fss", "or", "kr"],
+              "path": ["api", "document.json"],
+              "query": [
+                {
+                  "key": "crtfc_key",
+                  "value": "{{api_key}}"
+                },
+                {
+                  "key": "receipt_no",
+                  "value": "20240314000123",
+                  "description": "Receipt number from /list.json endpoint"
+                }
+              ]
+            },
+            "description": "Get detailed information about a specific filing\n\nUse receipt_no from /list.json response"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Dividends & Shareholders",
+      "item": [
+        {
+          "name": "Get Dividend Information",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://opendart.fss.or.kr/api/dividend.json?crtfc_key={{api_key}}&stock_code=005930",
+              "protocol": "https",
+              "host": ["opendart", "fss", "or", "kr"],
+              "path": ["api", "dividend.json"],
+              "query": [
+                {
+                  "key": "crtfc_key",
+                  "value": "{{api_key}}"
+                },
+                {
+                  "key": "stock_code",
+                  "value": "005930",
+                  "description": "6-digit stock code"
+                }
+              ]
+            },
+            "description": "Get dividend payment history and information\n\nNote: Uses stock_code (6 digits), not corp_code"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Major Shareholders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://opendart.fss.or.kr/api/majorstock.json?crtfc_key={{api_key}}&corp_code=00126380&pageNo=1&pageCount=10",
+              "protocol": "https",
+              "host": ["opendart", "fss", "or", "kr"],
+              "path": ["api", "majorstock.json"],
+              "query": [
+                {
+                  "key": "crtfc_key",
+                  "value": "{{api_key}}"
+                },
+                {
+                  "key": "corp_code",
+                  "value": "00126380"
+                },
+                {
+                  "key": "pageNo",
+                  "value": "1"
+                },
+                {
+                  "key": "pageCount",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get major shareholder information and ownership changes"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Example Workflows",
+      "item": [
+        {
+          "name": "Workflow 1: Complete Company Analysis",
+          "item": [
+            {
+              "name": "1. Search for company by name",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "https://opendart.fss.or.kr/api/companysearch.json?crtfc_key={{api_key}}&corp_name=삼성&page_count=1",
+                  "protocol": "https",
+                  "host": ["opendart", "fss", "or", "kr"],
+                  "path": ["api", "companysearch.json"],
+                  "query": [
+                    {
+                      "key": "crtfc_key",
+                      "value": "{{api_key}}"
+                    },
+                    {
+                      "key": "corp_name",
+                      "value": "삼성"
+                    },
+                    {
+                      "key": "page_count",
+                      "value": "1"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "2. Get company details",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "https://opendart.fss.or.kr/api/company.json?crtfc_key={{api_key}}&corp_code=00126380",
+                  "protocol": "https",
+                  "host": ["opendart", "fss", "or", "kr"],
+                  "path": ["api", "company.json"],
+                  "query": [
+                    {
+                      "key": "crtfc_key",
+                      "value": "{{api_key}}"
+                    },
+                    {
+                      "key": "corp_code",
+                      "value": "00126380"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "3. Get available financial statements",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "https://opendart.fss.or.kr/api/fnlttSinglAcnt.json?crtfc_key={{api_key}}&corp_code=00126380",
+                  "protocol": "https",
+                  "host": ["opendart", "fss", "or", "kr"],
+                  "path": ["api", "fnlttSinglAcnt.json"],
+                  "query": [
+                    {
+                      "key": "crtfc_key",
+                      "value": "{{api_key}}"
+                    },
+                    {
+                      "key": "corp_code",
+                      "value": "00126380"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "4. Get 2023 annual financial statements",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json?crtfc_key={{api_key}}&corp_code=00126380&bsns_year=2023&reprt_code=11011",
+                  "protocol": "https",
+                  "host": ["opendart", "fss", "or", "kr"],
+                  "path": ["api", "fnlttSinglAcntAll.json"],
+                  "query": [
+                    {
+                      "key": "crtfc_key",
+                      "value": "{{api_key}}"
+                    },
+                    {
+                      "key": "corp_code",
+                      "value": "00126380"
+                    },
+                    {
+                      "key": "bsns_year",
+                      "value": "2023"
+                    },
+                    {
+                      "key": "reprt_code",
+                      "value": "11011"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "5. Get recent filings",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "https://opendart.fss.or.kr/api/list.json?crtfc_key={{api_key}}&corp_code=00126380&pageCount=5",
+                  "protocol": "https",
+                  "host": ["opendart", "fss", "or", "kr"],
+                  "path": ["api", "list.json"],
+                  "query": [
+                    {
+                      "key": "crtfc_key",
+                      "value": "{{api_key}}"
+                    },
+                    {
+                      "key": "corp_code",
+                      "value": "00126380"
+                    },
+                    {
+                      "key": "pageCount",
+                      "value": "5"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "api_key",
+      "value": "YOUR_API_KEY_HERE",
+      "type": "string"
+    }
+  ]
+}

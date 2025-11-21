@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 주식 자동매매 시스템</title>
+
+    <!-- Google Fonts - Inter for modern typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Design System CSS (in order) -->
+    <link rel="stylesheet" href="../design-tokens.css">
+    <link rel="stylesheet" href="../components.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- 로그인 페이지 -->
+    <div id="loginPage" class="page active">
+        <div class="login-container">
+            <h1>🤖 AI 주식 자동매매</h1>
+            <div class="login-form">
+                <input type="text" id="username" placeholder="아이디" autocomplete="username">
+                <input type="password" id="password" placeholder="비밀번호" autocomplete="current-password">
+                <button onclick="login()">로그인</button>
+                <div id="loginError" class="error-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 메인 대시보드 -->
+    <div id="mainPage" class="page">
+        <nav class="navbar">
+            <h1>🤖 AI 주식 자동매매</h1>
+            <div class="nav-buttons">
+                <button onclick="showTab('dashboard')">대시보드</button>
+                <button onclick="showTab('trading')">매매</button>
+                <button onclick="showTab('recommendations')">추천 종목</button>
+                <button onclick="showTab('strategy')">전략 설정</button>
+                <button onclick="showTab('news')">뉴스</button>
+                <button onclick="showTab('other')">기타</button>
+                <button onclick="logout()">로그아웃</button>
+            </div>
+        </nav>
+
+        <!-- 대시보드 탭 -->
+        <div id="dashboardTab" class="tab active">
+            <div class="container">
+                <h2>📊 계좌 정보</h2>
+                <div class="account-summary" id="accountSummary">
+                    <div class="summary-card">
+                        <h3>💰 총 평가금액</h3>
+                        <p id="totalValue">-</p>
+                    </div>
+                    <div class="summary-card">
+                        <h3>💵 예수금</h3>
+                        <p id="cashBalance">-</p>
+                    </div>
+                    <div class="summary-card">
+                        <h3>📈 총 손익</h3>
+                        <p id="totalProfitLoss">-</p>
+                    </div>
+                </div>
+
+                <h2>📦 보유 종목</h2>
+                <button onclick="loadPositions()" class="refresh-btn">새로고침</button>
+                <div class="positions-list" id="positionsList">
+                    <p class="loading">데이터 로딩 중...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 매매 탭 -->
+        <div id="tradingTab" class="tab">
+            <div class="container">
+                <h2>🔍 종목 분석 및 매매</h2>
+
+                <div class="trading-form">
+                    <h3>매수 분석</h3>
+                    <input type="text" id="buyStockCode" placeholder="종목코드 (예: 005930)">
+                    <input type="text" id="buyStockName" placeholder="종목명 (예: 삼성전자)">
+                    <button onclick="analyzeBuy()">AI 매수 분석</button>
+
+                    <div id="buyAnalysisResult" class="analysis-result"></div>
+
+                    <div id="buyExecuteSection" class="execute-section" style="display: none;">
+                        <h4>매수 실행</h4>
+                        <input type="number" id="buyQuantity" placeholder="수량">
+                        <input type="number" id="buyPrice" placeholder="가격 (0 = 시장가)">
+                        <button onclick="executeBuy()" class="execute-btn">매수 실행</button>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="trading-form">
+                    <h3>매도 분석</h3>
+                    <p>보유 종목 목록에서 선택하세요:</p>
+                    <select id="sellPositionSelect" onchange="loadPositionForSell()">
+                        <option value="">종목 선택</option>
+                    </select>
+                    <button onclick="analyzeSell()">AI 매도 분석</button>
+
+                    <div id="sellAnalysisResult" class="analysis-result"></div>
+
+                    <div id="sellExecuteSection" class="execute-section" style="display: none;">
+                        <h4>매도 실행</h4>
+                        <input type="number" id="sellQuantity" placeholder="수량">
+                        <input type="number" id="sellPrice" placeholder="가격 (0 = 시장가)">
+                        <button onclick="executeSell()" class="execute-btn sell-btn">매도 실행</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 추천 종목 탭 -->
+        <div id="recommendationsTab" class="tab">
+            <div class="container">
+                <h2>💡 AI 추천 종목</h2>
+                <button onclick="loadRecommendations()" class="refresh-btn">추천 종목 분석</button>
+
+                <div id="recommendationsContainer" class="recommendations-container">
+                    <p class="loading">추천 종목 분석 버튼을 클릭해주세요.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 전략 설정 탭 -->
+        <div id="strategyTab" class="tab">
+            <div class="container">
+                <h2>🎯 매매 전략 설정</h2>
+
+                <!-- 전략 기간별 서브 탭 -->
+                <div class="strategy-tabs">
+                    <button class="strategy-tab-btn active" onclick="showStrategySubTab('short')">⚡ 단기 매매</button>
+                    <button class="strategy-tab-btn" onclick="showStrategySubTab('medium')">📊 중기 매매</button>
+                    <button class="strategy-tab-btn" onclick="showStrategySubTab('long')">📈 장기 매매</button>
+                </div>
+
+                <!-- 단기 매매 전략 -->
+                <div id="shortStrategyTab" class="strategy-content active">
+                    <h3>⚡ 단기 매매 전략</h3>
+
+                    <div class="strategy-type-section">
+                        <h4>1. 데이트레이딩 (Day Trading)</h4>
+                        <div class="strategy-explanation">
+                            <p><strong>개요:</strong> 당일 매수와 매도를 완결하는 초단기 매매 전략입니다. 장중 가격 변동을 활용하여 수익을 추구합니다.</p>
+
+                            <p><strong>특징:</strong></p>
+                            <ul>
+                                <li>보유 기간: 몇 분 ~ 몇 시간 (당일 청산)</li>
+                                <li>목표 수익률: 1~3%</li>
+                                <li>거래 빈도: 매우 높음 (하루 여러 번)</li>
+                                <li>리스크 수준: 중간 (빠른 손절 필요)</li>
+                            </ul>
+
+                            <p><strong>주요 지표:</strong></p>
+                            <ul>
+                                <li>실시간 가격 움직임 (틱 차트)</li>
+                                <li>거래량 급증 포착</li>
+                                <li>단기 이동평균선 (5분, 15분)</li>
+                                <li>호가창 분석 (매수/매도 잔량)</li>
+                            </ul>
+
+                            <div class="strategy-settings">
+                                <h5>⚙️ 데이트레이딩 설정</h5>
+                                <div class="setting-group">
+                                    <label>목표 수익률 (%):</label>
+                                    <input type="number" id="daytrading_target" min="0.5" max="10" step="0.5" value="2">
+                                    <span class="setting-help">목표 수익률 도달 시 익절</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>손절 기준 (%):</label>
+                                    <input type="number" id="daytrading_stoploss" min="-10" max="0" step="0.5" value="-1">
+                                    <span class="setting-help">손실률 도달 시 즉시 손절</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>거래량 증가율 임계값 (%):</label>
+                                    <input type="number" id="daytrading_volume" min="50" max="500" step="50" value="200">
+                                    <span class="setting-help">평균 거래량 대비 증가율</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>최대 보유 시간 (분):</label>
+                                    <input type="number" id="daytrading_maxtime" min="30" max="360" step="30" value="240">
+                                    <span class="setting-help">이 시간 경과 시 강제 청산</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="strategy-type-section">
+                        <h4>2. 스캘핑 (Scalping)</h4>
+                        <div class="strategy-explanation">
+                            <p><strong>개요:</strong> 수초~수분 내 작은 가격 변동으로 반복 수익을 추구하는 초단기 매매입니다.</p>
+
+                            <p><strong>특징:</strong></p>
+                            <ul>
+                                <li>보유 기간: 수초 ~ 수분</li>
+                                <li>목표 수익률: 0.1~1%</li>
+                                <li>거래 빈도: 매우 매우 높음 (하루 수십~수백 번)</li>
+                                <li>리스크 수준: 낮음 (매우 짧은 보유)</li>
+                            </ul>
+
+                            <p><strong>주요 지표:</strong></p>
+                            <ul>
+                                <li>호가 스프레드 분석</li>
+                                <li>초단기 가격 모멘텀</li>
+                                <li>체결 강도</li>
+                                <li>1분/3분 차트</li>
+                            </ul>
+
+                            <div class="strategy-settings">
+                                <h5>⚙️ 스캘핑 설정</h5>
+                                <div class="setting-group">
+                                    <label>목표 수익률 (%):</label>
+                                    <input type="number" id="scalping_target" min="0.1" max="3" step="0.1" value="0.5">
+                                    <span class="setting-help">작은 수익을 반복적으로 획득</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>손절 기준 (%):</label>
+                                    <input type="number" id="scalping_stoploss" min="-3" max="0" step="0.1" value="-0.3">
+                                    <span class="setting-help">빠른 손절이 핵심</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>최대 보유 시간 (초):</label>
+                                    <input type="number" id="scalping_maxtime" min="30" max="600" step="30" value="180">
+                                    <span class="setting-help">초단위로 관리</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>호가 스프레드 최대값 (원):</label>
+                                    <input type="number" id="scalping_spread" min="10" max="1000" step="10" value="100">
+                                    <span class="setting-help">스프레드가 너무 크면 진입 안함</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="strategy-type-section">
+                        <h4>3. 스윙 트레이딩 (Swing Trading)</h4>
+                        <div class="strategy-explanation">
+                            <p><strong>개요:</strong> 수일~수주간 가격의 스윙(변동)을 포착하여 수익을 추구하는 전략입니다.</p>
+
+                            <p><strong>특징:</strong></p>
+                            <ul>
+                                <li>보유 기간: 2일 ~ 2주</li>
+                                <li>목표 수익률: 5~15%</li>
+                                <li>거래 빈도: 보통 (주 1~3회)</li>
+                                <li>리스크 수준: 중간</li>
+                            </ul>
+
+                            <p><strong>주요 지표:</strong></p>
+                            <ul>
+                                <li>일봉 차트 분석</li>
+                                <li>이동평균선 (20일, 60일)</li>
+                                <li>RSI, MACD 등 기술적 지표</li>
+                                <li>지지선/저항선</li>
+                                <li>패턴 분석 (삼각수렴, 헤드앤숄더 등)</li>
+                            </ul>
+
+                            <div class="strategy-settings">
+                                <h5>⚙️ 스윙 트레이딩 설정</h5>
+                                <div class="setting-group">
+                                    <label>목표 수익률 (%):</label>
+                                    <input type="number" id="swing_target" min="3" max="30" step="1" value="10">
+                                    <span class="setting-help">중기 목표 수익률</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>손절 기준 (%):</label>
+                                    <input type="number" id="swing_stoploss" min="-20" max="0" step="1" value="-5">
+                                    <span class="setting-help">추세 이탈 시 손절</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>최대 보유 일수:</label>
+                                    <input type="number" id="swing_maxdays" min="1" max="30" step="1" value="14">
+                                    <span class="setting-help">이 기간 경과 시 재평가</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>RSI 과매수 기준:</label>
+                                    <input type="number" id="swing_rsi_high" min="60" max="90" step="5" value="70">
+                                    <span class="setting-help">RSI가 이 값 이상이면 과매수</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>RSI 과매도 기준:</label>
+                                    <input type="number" id="swing_rsi_low" min="10" max="40" step="5" value="30">
+                                    <span class="setting-help">RSI가 이 값 이하이면 과매도</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 중기 매매 전략 -->
+                <div id="mediumStrategyTab" class="strategy-content">
+                    <h3>📊 중기 매매 전략</h3>
+
+                    <div class="strategy-type-section">
+                        <h4>1. 추세 추종 전략 (Trend Following)</h4>
+                        <div class="strategy-explanation">
+                            <p><strong>개요:</strong> 확립된 추세를 따라가며 중기적 수익을 추구하는 전략입니다.</p>
+
+                            <p><strong>특징:</strong></p>
+                            <ul>
+                                <li>보유 기간: 2주 ~ 3개월</li>
+                                <li>목표 수익률: 15~30%</li>
+                                <li>거래 빈도: 낮음 (월 1~2회)</li>
+                                <li>리스크 수준: 중간~높음</li>
+                            </ul>
+
+                            <p><strong>주요 지표:</strong></p>
+                            <ul>
+                                <li>중기 이동평균선 (60일, 120일)</li>
+                                <li>추세선 분석</li>
+                                <li>거래량 추세</li>
+                                <li>주봉/월봉 차트</li>
+                            </ul>
+
+                            <div class="strategy-settings">
+                                <h5>⚙️ 추세 추종 설정</h5>
+                                <div class="setting-group">
+                                    <label>목표 수익률 (%):</label>
+                                    <input type="number" id="trend_target" min="10" max="50" step="5" value="20">
+                                    <span class="setting-help">중기 목표</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>손절 기준 (%):</label>
+                                    <input type="number" id="trend_stoploss" min="-30" max="0" step="1" value="-10">
+                                    <span class="setting-help">추세 전환 시 손절</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>최대 보유 기간 (주):</label>
+                                    <input type="number" id="trend_maxweeks" min="2" max="24" step="1" value="12">
+                                    <span class="setting-help">주 단위 관리</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>이동평균선 단기 (일):</label>
+                                    <input type="number" id="trend_ma_short" min="10" max="100" step="10" value="60">
+                                    <span class="setting-help">단기 추세 파악</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>이동평균선 장기 (일):</label>
+                                    <input type="number" id="trend_ma_long" min="100" max="300" step="20" value="120">
+                                    <span class="setting-help">장기 추세 파악</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="strategy-type-section">
+                        <h4>2. 모멘텀 전략 (Momentum Strategy)</h4>
+                        <div class="strategy-explanation">
+                            <p><strong>개요:</strong> 강한 상승세를 보이는 종목에 투자하여 모멘텀을 활용합니다.</p>
+
+                            <p><strong>특징:</strong></p>
+                            <ul>
+                                <li>보유 기간: 1주 ~ 2개월</li>
+                                <li>목표 수익률: 20~40%</li>
+                                <li>거래 빈도: 보통</li>
+                                <li>리스크 수준: 높음</li>
+                            </ul>
+
+                            <p><strong>주요 지표:</strong></p>
+                            <ul>
+                                <li>상대 강도 (RS)</li>
+                                <li>가격 모멘텀</li>
+                                <li>거래량 폭증</li>
+                                <li>신고가 갱신</li>
+                            </ul>
+
+                            <div class="strategy-settings">
+                                <h5>⚙️ 모멘텀 전략 설정</h5>
+                                <div class="setting-group">
+                                    <label>목표 수익률 (%):</label>
+                                    <input type="number" id="momentum_target" min="15" max="100" step="5" value="30">
+                                    <span class="setting-help">공격적 목표</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>손절 기준 (%):</label>
+                                    <input type="number" id="momentum_stoploss" min="-30" max="0" step="1" value="-12">
+                                    <span class="setting-help">변동성 고려한 손절</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>모멘텀 기간 (일):</label>
+                                    <input type="number" id="momentum_period" min="10" max="90" step="10" value="30">
+                                    <span class="setting-help">이 기간 동안의 수익률로 모멘텀 측정</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>최소 모멘텀 (%):</label>
+                                    <input type="number" id="momentum_threshold" min="5" max="50" step="5" value="15">
+                                    <span class="setting-help">진입 최소 조건</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 장기 매매 전략 -->
+                <div id="longStrategyTab" class="strategy-content">
+                    <h3>📈 장기 매매 전략</h3>
+
+                    <div class="strategy-type-section">
+                        <h4>1. 가치 투자 (Value Investing)</h4>
+                        <div class="strategy-explanation">
+                            <p><strong>개요:</strong> 기업의 내재 가치 대비 저평가된 종목을 발굴하여 장기 보유합니다.</p>
+
+                            <p><strong>특징:</strong></p>
+                            <ul>
+                                <li>보유 기간: 6개월 ~ 수년</li>
+                                <li>목표 수익률: 50~200%</li>
+                                <li>거래 빈도: 매우 낮음 (분기 1~2회)</li>
+                                <li>리스크 수준: 낮음~중간</li>
+                            </ul>
+
+                            <p><strong>주요 지표:</strong></p>
+                            <ul>
+                                <li>PER (주가수익비율)</li>
+                                <li>PBR (주가순자산비율)</li>
+                                <li>ROE (자기자본이익률)</li>
+                                <li>배당수익률</li>
+                                <li>재무제표 분석</li>
+                            </ul>
+
+                            <div class="strategy-settings">
+                                <h5>⚙️ 가치 투자 설정</h5>
+                                <div class="setting-group">
+                                    <label>목표 수익률 (%):</label>
+                                    <input type="number" id="value_target" min="30" max="300" step="10" value="100">
+                                    <span class="setting-help">장기 목표</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>손절 기준 (%):</label>
+                                    <input type="number" id="value_stoploss" min="-50" max="0" step="5" value="-30">
+                                    <span class="setting-help">펀더멘털 훼손 시</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>최대 PER:</label>
+                                    <input type="number" id="value_per_max" min="5" max="30" step="1" value="15">
+                                    <span class="setting-help">이 값 이하일 때 저평가로 판단</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>최대 PBR:</label>
+                                    <input type="number" id="value_pbr_max" min="0.5" max="3" step="0.1" value="1.5">
+                                    <span class="setting-help">순자산 대비 저평가 기준</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>최소 ROE (%):</label>
+                                    <input type="number" id="value_roe_min" min="5" max="30" step="1" value="10">
+                                    <span class="setting-help">수익성 기준</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>최소 배당수익률 (%):</label>
+                                    <input type="number" id="value_dividend_min" min="0" max="10" step="0.5" value="2">
+                                    <span class="setting-help">배당 선호도</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="strategy-type-section">
+                        <h4>2. 성장주 투자 (Growth Investing)</h4>
+                        <div class="strategy-explanation">
+                            <p><strong>개요:</strong> 높은 성장 잠재력을 가진 기업에 장기 투자합니다.</p>
+
+                            <p><strong>특징:</strong></p>
+                            <ul>
+                                <li>보유 기간: 1년 ~ 수년</li>
+                                <li>목표 수익률: 100~500%</li>
+                                <li>거래 빈도: 매우 낮음</li>
+                                <li>리스크 수준: 중간~높음</li>
+                            </ul>
+
+                            <p><strong>주요 지표:</strong></p>
+                            <ul>
+                                <li>매출 성장률</li>
+                                <li>영업이익 증가율</li>
+                                <li>시장 점유율 확대</li>
+                                <li>신기술/신제품 개발</li>
+                                <li>산업 성장성</li>
+                            </ul>
+
+                            <div class="strategy-settings">
+                                <h5>⚙️ 성장주 투자 설정</h5>
+                                <div class="setting-group">
+                                    <label>목표 수익률 (%):</label>
+                                    <input type="number" id="growth_target" min="50" max="1000" step="50" value="200">
+                                    <span class="setting-help">장기 고수익 목표</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>손절 기준 (%):</label>
+                                    <input type="number" id="growth_stoploss" min="-50" max="0" step="5" value="-40">
+                                    <span class="setting-help">성장 스토리 붕괴 시</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>최소 매출 성장률 (%):</label>
+                                    <input type="number" id="growth_revenue_min" min="10" max="100" step="5" value="20">
+                                    <span class="setting-help">연평균 매출 성장률</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>최소 영업이익 성장률 (%):</label>
+                                    <input type="number" id="growth_profit_min" min="15" max="150" step="5" value="30">
+                                    <span class="setting-help">수익성 개선 속도</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>최소 보유 기간 (개월):</label>
+                                    <input type="number" id="growth_min_holding" min="6" max="60" step="6" value="12">
+                                    <span class="setting-help">단기 변동 무시</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="strategy-type-section">
+                        <h4>3. 배당 투자 (Dividend Investing)</h4>
+                        <div class="strategy-explanation">
+                            <p><strong>개요:</strong> 안정적인 배당 수익과 복리 효과를 추구하는 장기 전략입니다.</p>
+
+                            <p><strong>특징:</strong></p>
+                            <ul>
+                                <li>보유 기간: 2년 ~ 영구 보유</li>
+                                <li>목표 수익률: 연 8~15% (배당 포함)</li>
+                                <li>거래 빈도: 극히 낮음</li>
+                                <li>리스크 수준: 낮음</li>
+                            </ul>
+
+                            <p><strong>주요 지표:</strong></p>
+                            <ul>
+                                <li>배당수익률</li>
+                                <li>배당 성장률</li>
+                                <li>배당 지급 이력</li>
+                                <li>현금흐름 안정성</li>
+                            </ul>
+
+                            <div class="strategy-settings">
+                                <h5>⚙️ 배당 투자 설정</h5>
+                                <div class="setting-group">
+                                    <label>최소 배당수익률 (%):</label>
+                                    <input type="number" id="dividend_yield_min" min="2" max="10" step="0.5" value="4">
+                                    <span class="setting-help">진입 기준</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>배당성향 최소 (%):</label>
+                                    <input type="number" id="dividend_payout_min" min="20" max="80" step="10" value="30">
+                                    <span class="setting-help">배당 지속 가능성</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>배당성향 최대 (%):</label>
+                                    <input type="number" id="dividend_payout_max" min="40" max="100" step="10" value="70">
+                                    <span class="setting-help">너무 높으면 위험</span>
+                                </div>
+                                <div class="setting-group">
+                                    <label>최소 배당 지급 연수:</label>
+                                    <input type="number" id="dividend_years_min" min="3" max="30" step="1" value="5">
+                                    <span class="setting-help">배당 안정성 확인</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="strategy-actions">
+                    <button onclick="saveAllStrategySettings()" class="save-btn">💾 모든 전략 설정 저장</button>
+                    <button onclick="loadAllStrategySettings()" class="refresh-btn">🔄 설정 불러오기</button>
+                    <button onclick="resetAllStrategySettings()" class="reset-btn">↺ 기본값으로 초기화</button>
+                </div>
+
+                <div id="strategySettingsMessage" class="settings-message"></div>
+
+                <div class="strategy-info">
+                    <h3>ℹ️ 전략 선택 가이드</h3>
+                    <ul>
+                        <li><strong>단기 매매:</strong> 활발한 시장 참여와 빠른 의사결정이 필요합니다. 거래 비용과 세금을 고려해야 합니다.</li>
+                        <li><strong>중기 매매:</strong> 추세를 따르며 적절한 타이밍에 진입/청산합니다. 인내심이 필요합니다.</li>
+                        <li><strong>장기 매매:</strong> 기업의 펀더멘털을 중시하며, 단기 변동에 흔들리지 않는 투자 철학이 필요합니다.</li>
+                        <li>각 전략은 독립적으로 사용하거나, 포트폴리오를 분산하여 병행할 수 있습니다.</li>
+                        <li>본인의 투자 성향, 가용 시간, 리스크 허용도를 고려하여 선택하세요.</li>
+                    </ul>
+                </div>
+
+                <h2>⚙️ 기본 전략 변수 설정</h2>
+
+                <div class="strategy-section">
+                    <h3>💰 매수 전략</h3>
+                    <div class="strategy-explanation">
+                        <h4>전략 개요</h4>
+                        <p>AI 기반 매수 전략은 Claude AI를 활용하여 실시간 시장 데이터와 기술적 지표를 분석합니다.</p>
+
+                        <h4>주요 판단 근거</h4>
+                        <ul>
+                            <li><strong>기술적 분석:</strong> 현재가, 등락률, 거래량, 고가/저가/시가 등을 종합 분석</li>
+                            <li><strong>거래량 분석:</strong> 비정상적인 거래량 증가 또는 감소 패턴 감지</li>
+                            <li><strong>가격 추세:</strong> 단기/중기 가격 추세와 모멘텀 평가</li>
+                            <li><strong>리스크 관리:</strong> 계좌 잔고, 최대 포지션 크기, 분산 투자 원칙 준수</li>
+                            <li><strong>시장 상황:</strong> 전반적인 시장 심리와 뉴스 반영</li>
+                        </ul>
+
+                        <h4>매수 조건</h4>
+                        <ul>
+                            <li>계좌 잔고 내에서 매수 가능</li>
+                            <li>최대 포지션 크기를 초과하지 않음</li>
+                            <li>최대 보유 종목 수를 초과하지 않음</li>
+                            <li>기술적 지표가 긍정적</li>
+                            <li>리스크 대비 기대 수익률이 적절</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="strategy-section">
+                    <h3>💸 매도 전략</h3>
+                    <div class="strategy-explanation">
+                        <h4>전략 개요</h4>
+                        <p>보유 종목의 수익률과 시장 상황을 실시간 분석하여 최적의 매도 타이밍을 제안합니다.</p>
+
+                        <h4>주요 판단 근거</h4>
+                        <ul>
+                            <li><strong>수익률 분석:</strong> 현재 수익률과 목표 수익률 비교</li>
+                            <li><strong>손익 관리:</strong> 손절선과 익절선 기준 적용</li>
+                            <li><strong>추세 분석:</strong> 가격 추세 전환 신호 감지</li>
+                            <li><strong>기술적 지표:</strong> 매도 시그널 확인</li>
+                            <li><strong>리스크 평가:</strong> 손실 확대 가능성 판단</li>
+                        </ul>
+
+                        <h4>매도 전략 유형</h4>
+                        <ul>
+                            <li><strong>익절 (Take Profit):</strong> 수익률 10% 이상 달성하고 추세 약화 시</li>
+                            <li><strong>손절 (Stop Loss):</strong> 손실률 7% 이상 도달 시 (기본값)</li>
+                            <li><strong>부분 매도:</strong> 수익은 나지만 불확실성이 높은 경우</li>
+                            <li><strong>긴급 매도:</strong> 급격한 악재 발생 시 즉시 청산</li>
+                        </ul>
+
+                        <h4>긴급도 단계</h4>
+                        <ul>
+                            <li><strong>HIGH:</strong> 즉시 매도 권장 (손절선 돌파, 급격한 하락)</li>
+                            <li><strong>MEDIUM:</strong> 신중한 매도 검토 필요 (추세 약화)</li>
+                            <li><strong>LOW:</strong> 보유 지속 가능 (안정적인 상태)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h2>⚙️ 전략 변수 설정</h2>
+
+                <div class="settings-section">
+                    <div class="setting-card">
+                        <h4>📊 포지션 관리</h4>
+                        <div class="setting-item">
+                            <label for="maxPositions">최대 보유 종목 수:</label>
+                            <input type="number" id="maxPositions" min="1" max="20" value="5">
+                            <span class="setting-help">동시에 보유할 수 있는 최대 종목 수</span>
+                        </div>
+                        <div class="setting-item">
+                            <label for="maxPositionSize">최대 포지션 크기 (원):</label>
+                            <input type="number" id="maxPositionSize" min="100000" max="50000000" step="100000" value="5000000">
+                            <span class="setting-help">한 종목당 최대 투자 금액</span>
+                        </div>
+                    </div>
+
+                    <div class="setting-card">
+                        <h4>📈 매수 파라미터</h4>
+                        <div class="setting-item">
+                            <label for="buyConfidenceThreshold">최소 신뢰도 (%):</label>
+                            <input type="number" id="buyConfidenceThreshold" min="0" max="100" value="70">
+                            <span class="setting-help">AI 분석 신뢰도가 이 값 이상일 때만 매수</span>
+                        </div>
+                        <div class="setting-item">
+                            <label for="maxBuyAmount">최대 매수 금액 (원):</label>
+                            <input type="number" id="maxBuyAmount" min="100000" max="10000000" step="100000" value="3000000">
+                            <span class="setting-help">한 번에 매수할 수 있는 최대 금액</span>
+                        </div>
+                    </div>
+
+                    <div class="setting-card">
+                        <h4>📉 매도 파라미터</h4>
+                        <div class="setting-item">
+                            <label for="stopLossRate">손절 비율 (%):</label>
+                            <input type="number" id="stopLossRate" min="-20" max="0" step="0.5" value="-7">
+                            <span class="setting-help">이 손실률 도달 시 자동 손절 (-7% = -7)</span>
+                        </div>
+                        <div class="setting-item">
+                            <label for="takeProfitRate">익절 비율 (%):</label>
+                            <input type="number" id="takeProfitRate" min="0" max="100" step="1" value="15">
+                            <span class="setting-help">이 수익률 도달 시 익절 고려</span>
+                        </div>
+                        <div class="setting-item">
+                            <label for="sellConfidenceThreshold">최소 신뢰도 (%):</label>
+                            <input type="number" id="sellConfidenceThreshold" min="0" max="100" value="60">
+                            <span class="setting-help">AI 매도 분석 신뢰도가 이 값 이상일 때만 매도</span>
+                        </div>
+                    </div>
+
+                    <div class="setting-card">
+                        <h4>🤖 AI 모델 설정</h4>
+                        <div class="setting-item">
+                            <label for="aiModel">AI 모델:</label>
+                            <select id="aiModel">
+                                <option value="claude-sonnet-4-5-20250929" selected>Claude Sonnet 4.5 (권장)</option>
+                                <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+                                <option value="claude-3-opus-20240229">Claude 3 Opus</option>
+                            </select>
+                            <span class="setting-help">사용할 Claude AI 모델 선택</span>
+                        </div>
+                        <div class="setting-item">
+                            <label for="maxTokens">최대 토큰 수:</label>
+                            <input type="number" id="maxTokens" min="500" max="4000" step="100" value="2000">
+                            <span class="setting-help">AI 분석 응답의 최대 길이</span>
+                        </div>
+                    </div>
+
+                    <div class="setting-actions">
+                        <button onclick="saveStrategySettings()" class="save-btn">💾 설정 저장</button>
+                        <button onclick="loadStrategySettings()" class="refresh-btn">🔄 설정 불러오기</button>
+                        <button onclick="resetStrategySettings()" class="reset-btn">↺ 기본값으로 초기화</button>
+                    </div>
+
+                    <div id="settingsMessage" class="settings-message"></div>
+                </div>
+
+                <div class="strategy-info">
+                    <h3>ℹ️ 참고 사항</h3>
+                    <ul>
+                        <li>설정값은 브라우저에 로컬로 저장되며, 백엔드에도 동기화됩니다.</li>
+                        <li>너무 공격적인 설정은 큰 손실을 초래할 수 있으니 신중하게 조정하세요.</li>
+                        <li>손절 비율은 음수로 입력합니다 (예: -7% 손절 = -7)</li>
+                        <li>설정 변경 후 반드시 '설정 저장' 버튼을 눌러주세요.</li>
+                        <li>기본 설정은 보수적인 전략으로 설계되어 있습니다.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 뉴스 탭 -->
+        <div id="newsTab" class="tab">
+            <div class="container">
+                <h2>📰 뉴스 센터</h2>
+                <button onclick="loadAllNews()" class="refresh-btn">전체 새로고침</button>
+
+                <!-- 뉴스 카테고리 탭 -->
+                <div class="news-category-tabs">
+                    <button class="news-tab-btn active" onclick="showNewsCategory('popular')">🔥 인기 뉴스</button>
+                    <button class="news-tab-btn" onclick="showNewsCategory('economy')">💼 경제</button>
+                    <button class="news-tab-btn" onclick="showNewsCategory('stock')">📈 증시</button>
+                    <button class="news-tab-btn" onclick="showNewsCategory('tech')">💻 IT/기술</button>
+                    <button class="news-tab-btn" onclick="showNewsCategory('international')">🌍 국제</button>
+                    <button class="news-tab-btn" onclick="showNewsCategory('industry')">🏭 산업</button>
+                </div>
+
+                <!-- 인기 뉴스 -->
+                <div id="popularNewsContent" class="news-category-content active">
+                    <h3>🔥 인기 뉴스</h3>
+                    <div id="popularNewsList" class="news-list">
+                        <p class="loading">인기 뉴스 로딩 중...</p>
+                    </div>
+                </div>
+
+                <!-- 경제 뉴스 -->
+                <div id="economyNewsContent" class="news-category-content">
+                    <h3>💼 경제 뉴스</h3>
+                    <div id="economyNewsList" class="news-list">
+                        <p class="loading">경제 뉴스 로딩 중...</p>
+                    </div>
+                </div>
+
+                <!-- 증시 뉴스 -->
+                <div id="stockNewsContent" class="news-category-content">
+                    <h3>📈 증시 뉴스</h3>
+                    <div id="stockNewsList" class="news-list">
+                        <p class="loading">증시 뉴스 로딩 중...</p>
+                    </div>
+                </div>
+
+                <!-- IT/기술 뉴스 -->
+                <div id="techNewsContent" class="news-category-content">
+                    <h3>💻 IT/기술 뉴스</h3>
+                    <div id="techNewsList" class="news-list">
+                        <p class="loading">IT/기술 뉴스 로딩 중...</p>
+                    </div>
+                </div>
+
+                <!-- 국제 뉴스 -->
+                <div id="internationalNewsContent" class="news-category-content">
+                    <h3>🌍 국제 뉴스</h3>
+                    <div id="internationalNewsList" class="news-list">
+                        <p class="loading">국제 뉴스 로딩 중...</p>
+                    </div>
+                </div>
+
+                <!-- 산업 뉴스 -->
+                <div id="industryNewsContent" class="news-category-content">
+                    <h3>🏭 산업 뉴스</h3>
+                    <div id="industryNewsList" class="news-list">
+                        <p class="loading">산업 뉴스 로딩 중...</p>
+                    </div>
+                </div>
+
+                <h2>📊 시장 심리 분석</h2>
+                <div id="marketSentiment" class="sentiment-container">
+                    <p class="loading">분석 중...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 기타 탭 -->
+        <div id="otherTab" class="tab">
+            <div class="container">
+                <h2>🔍 시장 정보 분석</h2>
+
+                <!-- 서브 탭 네비게이션 -->
+                <div class="sub-nav">
+                    <button class="sub-nav-btn active" onclick="showOtherSubTab('politicians')">
+                        🏛️ 정치인 주식
+                    </button>
+                    <button class="sub-nav-btn" onclick="showOtherSubTab('stocknear')">
+                        📊 StockNear
+                    </button>
+                    <button class="sub-nav-btn" onclick="showOtherSubTab('analysis')">
+                        📈 StockAnalysis
+                    </button>
+                    <button class="sub-nav-btn" onclick="showOtherSubTab('charts')">
+                        📉 ChartExchange
+                    </button>
+                </div>
+
+                <!-- 정치인 주식 거래 (Capitol Trades) -->
+                <div id="politiciansSubTab" class="sub-tab active">
+                    <div class="section-header">
+                        <h3>🏛️ 미국 정치인 주식 거래 현황</h3>
+                        <button onclick="loadPoliticianTrades()" class="refresh-btn">새로고침</button>
+                    </div>
+
+                    <div class="filter-section">
+                        <select id="politicianFilter" onchange="filterPoliticianData()">
+                            <option value="all">전체 정치인</option>
+                            <option value="nancy-pelosi">Nancy Pelosi</option>
+                            <option value="paul-pelosi">Paul Pelosi</option>
+                        </select>
+                        <select id="tradeTypeFilter" onchange="filterPoliticianData()">
+                            <option value="all">전체 거래</option>
+                            <option value="purchase">매수</option>
+                            <option value="sale">매도</option>
+                        </select>
+                    </div>
+
+                    <div id="politicianTradesContent" class="data-content">
+                        <p class="loading">정치인 거래 데이터 로딩 중...</p>
+                    </div>
+                </div>
+
+                <!-- StockNear 데이터 -->
+                <div id="stocknearSubTab" class="sub-tab">
+                    <div class="section-header">
+                        <h3>📊 StockNear 실시간 데이터</h3>
+                        <button onclick="loadStockNearData()" class="refresh-btn">새로고침</button>
+                    </div>
+
+                    <div class="info-cards">
+                        <div class="info-card">
+                            <h4>📈 인기 종목</h4>
+                            <div id="stocknearTrending" class="card-content">
+                                <p class="loading">로딩 중...</p>
+                            </div>
+                        </div>
+                        <div class="info-card">
+                            <h4>🔥 거래량 급증</h4>
+                            <div id="stocknearVolume" class="card-content">
+                                <p class="loading">로딩 중...</p>
+                            </div>
+                        </div>
+                        <div class="info-card">
+                            <h4>💰 내부자 거래</h4>
+                            <div id="stocknearInsider" class="card-content">
+                                <p class="loading">로딩 중...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="stocknearDetailContent" class="data-content">
+                        <p class="loading">StockNear 데이터 로딩 중...</p>
+                    </div>
+                </div>
+
+                <!-- StockAnalysis 데이터 -->
+                <div id="analysisSubTab" class="sub-tab">
+                    <div class="section-header">
+                        <h3>📈 StockAnalysis 종합 분석</h3>
+                        <button onclick="loadStockAnalysisData()" class="refresh-btn">새로고침</button>
+                    </div>
+
+                    <div class="search-section">
+                        <input type="text" id="analysisStockSearch" placeholder="종목 검색 (예: AAPL, TSLA)">
+                        <button onclick="searchStockAnalysis()">검색</button>
+                    </div>
+
+                    <div class="info-cards">
+                        <div class="info-card">
+                            <h4>🎯 주요 지표</h4>
+                            <div id="analysisMetrics" class="card-content">
+                                <p class="loading">로딩 중...</p>
+                            </div>
+                        </div>
+                        <div class="info-card">
+                            <h4>💼 재무 정보</h4>
+                            <div id="analysisFinancials" class="card-content">
+                                <p class="loading">로딩 중...</p>
+                            </div>
+                        </div>
+                        <div class="info-card">
+                            <h4>📊 밸류에이션</h4>
+                            <div id="analysisValuation" class="card-content">
+                                <p class="loading">로딩 중...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="analysisDetailContent" class="data-content">
+                        <p class="loading">StockAnalysis 데이터 로딩 중...</p>
+                    </div>
+                </div>
+
+                <!-- ChartExchange 데이터 -->
+                <div id="chartsSubTab" class="sub-tab">
+                    <div class="section-header">
+                        <h3>📉 ChartExchange 차트 분석</h3>
+                        <button onclick="loadChartExchangeData()" class="refresh-btn">새로고침</button>
+                    </div>
+
+                    <div class="search-section">
+                        <input type="text" id="chartStockSearch" placeholder="종목 검색 (예: NASDAQ:MNDR)">
+                        <button onclick="searchChartExchange()">검색</button>
+                    </div>
+
+                    <div class="info-cards">
+                        <div class="info-card">
+                            <h4>📊 기술적 분석</h4>
+                            <div id="chartTechnicals" class="card-content">
+                                <p class="loading">로딩 중...</p>
+                            </div>
+                        </div>
+                        <div class="info-card">
+                            <h4>📈 차트 패턴</h4>
+                            <div id="chartPatterns" class="card-content">
+                                <p class="loading">로딩 중...</p>
+                            </div>
+                        </div>
+                        <div class="info-card">
+                            <h4>💹 거래 정보</h4>
+                            <div id="chartTrading" class="card-content">
+                                <p class="loading">로딩 중...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="chartDetailContent" class="data-content">
+                        <p class="loading">ChartExchange 데이터 로딩 중...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 주식 상세정보 모달 -->
+        <div id="stockDetailModal" class="modal">
+            <div class="modal-content">
+                <span class="modal-close" onclick="closeStockDetailModal()">&times;</span>
+                <div id="stockDetailContent">
+                    <div class="modal-loading">
+                        <p>로딩 중...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

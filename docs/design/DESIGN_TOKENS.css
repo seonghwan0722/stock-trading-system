@@ -1,0 +1,468 @@
+/**
+ * DART Financial Analysis - Design Tokens
+ * CSS Custom Properties for consistent theming
+ */
+
+:root {
+  /* ========================================================================
+     COLOR PALETTE
+     ======================================================================== */
+
+  /* Primary Colors */
+  --color-primary-50: #EFF6FF;
+  --color-primary-100: #DBEAFE;
+  --color-primary-200: #BFDBFE;
+  --color-primary-300: #93C5FD;
+  --color-primary-400: #60A5FA;
+  --color-primary-500: #3B82F6;
+  --color-primary-600: #2563EB;  /* Main brand color */
+  --color-primary-700: #1D4ED8;
+  --color-primary-800: #1E40AF;
+  --color-primary-900: #1E3A8A;
+
+  /* Neutral/Gray Scale */
+  --color-gray-50: #F9FAFB;
+  --color-gray-100: #F3F4F6;
+  --color-gray-200: #E5E7EB;
+  --color-gray-300: #D1D5DB;
+  --color-gray-400: #9CA3AF;
+  --color-gray-500: #6B7280;
+  --color-gray-600: #4B5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1F2937;
+  --color-gray-900: #111827;
+
+  /* Semantic Colors - Success/Positive */
+  --color-success-50: #ECFDF5;
+  --color-success-100: #D1FAE5;
+  --color-success-200: #A7F3D0;
+  --color-success-300: #6EE7B7;
+  --color-success-400: #34D399;
+  --color-success-500: #10B981;  /* Positive growth */
+  --color-success-600: #059669;
+  --color-success-700: #047857;
+  --color-success-800: #065F46;
+  --color-success-900: #064E3B;
+
+  /* Semantic Colors - Error/Negative */
+  --color-error-50: #FEF2F2;
+  --color-error-100: #FEE2E2;
+  --color-error-200: #FECACA;
+  --color-error-300: #FCA5A5;
+  --color-error-400: #F87171;
+  --color-error-500: #EF4444;  /* Negative growth */
+  --color-error-600: #DC2626;
+  --color-error-700: #B91C1C;
+  --color-error-800: #991B1B;
+  --color-error-900: #7F1D1D;
+
+  /* Semantic Colors - Warning */
+  --color-warning-50: #FFFBEB;
+  --color-warning-100: #FEF3C7;
+  --color-warning-200: #FDE68A;
+  --color-warning-300: #FCD34D;
+  --color-warning-400: #FBBF24;
+  --color-warning-500: #F59E0B;  /* Warning/Caution */
+  --color-warning-600: #D97706;
+  --color-warning-700: #B45309;
+  --color-warning-800: #92400E;
+  --color-warning-900: #78350F;
+
+  /* Semantic Colors - Info */
+  --color-info-50: #EFF6FF;
+  --color-info-100: #DBEAFE;
+  --color-info-200: #BFDBFE;
+  --color-info-300: #93C5FD;
+  --color-info-400: #60A5FA;
+  --color-info-500: #3B82F6;  /* Information */
+  --color-info-600: #2563EB;
+  --color-info-700: #1D4ED8;
+  --color-info-800: #1E40AF;
+  --color-info-900: #1E3A8A;
+
+  /* Chart Colors */
+  --color-chart-1: #2563EB;  /* Primary blue */
+  --color-chart-2: #8B5CF6;  /* Purple */
+  --color-chart-3: #EC4899;  /* Pink */
+  --color-chart-4: #F59E0B;  /* Amber */
+  --color-chart-5: #10B981;  /* Green */
+  --color-chart-6: #06B6D4;  /* Cyan */
+  --color-chart-7: #EF4444;  /* Red */
+  --color-chart-8: #6366F1;  /* Indigo */
+
+  /* ========================================================================
+     TYPOGRAPHY
+     ======================================================================== */
+
+  /* Font Families */
+  --font-primary: 'Pretendard', 'Inter', -apple-system, BlinkMacSystemFont,
+                  'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  --font-numeric: 'Inter', 'SF Mono', 'Consolas', 'Monaco', monospace;
+  --font-code: 'Fira Code', 'Source Code Pro', monospace;
+
+  /* Font Sizes */
+  --font-size-xs: 0.75rem;    /* 12px */
+  --font-size-sm: 0.875rem;   /* 14px */
+  --font-size-base: 1rem;     /* 16px */
+  --font-size-lg: 1.125rem;   /* 18px */
+  --font-size-xl: 1.25rem;    /* 20px */
+  --font-size-2xl: 1.5rem;    /* 24px */
+  --font-size-3xl: 1.875rem;  /* 30px */
+  --font-size-4xl: 2rem;      /* 32px */
+  --font-size-5xl: 2.5rem;    /* 40px */
+
+  /* Line Heights */
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+  --line-height-loose: 2;
+
+  /* Font Weights */
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+
+  /* Letter Spacing */
+  --letter-spacing-tight: -0.025em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.025em;
+  --letter-spacing-wider: 0.05em;
+
+  /* ========================================================================
+     SPACING
+     ======================================================================== */
+
+  --spacing-0: 0;
+  --spacing-1: 0.25rem;   /* 4px */
+  --spacing-2: 0.5rem;    /* 8px */
+  --spacing-3: 0.75rem;   /* 12px */
+  --spacing-4: 1rem;      /* 16px */
+  --spacing-5: 1.25rem;   /* 20px */
+  --spacing-6: 1.5rem;    /* 24px */
+  --spacing-8: 2rem;      /* 32px */
+  --spacing-10: 2.5rem;   /* 40px */
+  --spacing-12: 3rem;     /* 48px */
+  --spacing-16: 4rem;     /* 64px */
+  --spacing-20: 5rem;     /* 80px */
+  --spacing-24: 6rem;     /* 96px */
+  --spacing-32: 8rem;     /* 128px */
+
+  /* ========================================================================
+     SIZING
+     ======================================================================== */
+
+  /* Width */
+  --width-xs: 20rem;      /* 320px */
+  --width-sm: 24rem;      /* 384px */
+  --width-md: 28rem;      /* 448px */
+  --width-lg: 32rem;      /* 512px */
+  --width-xl: 36rem;      /* 576px */
+  --width-2xl: 42rem;     /* 672px */
+  --width-3xl: 48rem;     /* 768px */
+  --width-4xl: 56rem;     /* 896px */
+  --width-5xl: 64rem;     /* 1024px */
+  --width-6xl: 72rem;     /* 1152px */
+  --width-7xl: 80rem;     /* 1280px */
+  --width-full: 100%;
+  --width-screen: 100vw;
+
+  /* Container Max Widths */
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1280px;
+  --container-2xl: 1440px;
+
+  /* Height */
+  --height-full: 100%;
+  --height-screen: 100vh;
+
+  /* ========================================================================
+     BORDER RADIUS
+     ======================================================================== */
+
+  --radius-none: 0;
+  --radius-sm: 0.125rem;   /* 2px */
+  --radius-base: 0.25rem;  /* 4px */
+  --radius-md: 0.375rem;   /* 6px */
+  --radius-lg: 0.5rem;     /* 8px */
+  --radius-xl: 0.75rem;    /* 12px */
+  --radius-2xl: 1rem;      /* 16px */
+  --radius-3xl: 1.5rem;    /* 24px */
+  --radius-full: 9999px;
+
+  /* ========================================================================
+     SHADOWS
+     ======================================================================== */
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-base: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+  --shadow-none: none;
+
+  /* Colored Shadows */
+  --shadow-primary: 0 4px 14px 0 rgba(37, 99, 235, 0.2);
+  --shadow-success: 0 4px 14px 0 rgba(16, 185, 129, 0.2);
+  --shadow-error: 0 4px 14px 0 rgba(239, 68, 68, 0.2);
+  --shadow-warning: 0 4px 14px 0 rgba(245, 158, 11, 0.2);
+
+  /* ========================================================================
+     Z-INDEX
+     ======================================================================== */
+
+  --z-index-dropdown: 1000;
+  --z-index-sticky: 1020;
+  --z-index-fixed: 1030;
+  --z-index-modal-backdrop: 1040;
+  --z-index-modal: 1050;
+  --z-index-popover: 1060;
+  --z-index-tooltip: 1070;
+
+  /* ========================================================================
+     TRANSITIONS
+     ======================================================================== */
+
+  /* Duration */
+  --duration-instant: 0ms;
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --duration-slower: 400ms;
+  --duration-slowest: 600ms;
+
+  /* Easing Functions */
+  --ease-linear: linear;
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* ========================================================================
+     BREAKPOINTS (for reference in media queries)
+     ======================================================================== */
+
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1440px;
+
+  /* ========================================================================
+     COMPONENT-SPECIFIC TOKENS
+     ======================================================================== */
+
+  /* Search Bar */
+  --search-bar-height: 48px;
+  --search-bar-border: var(--color-gray-300);
+  --search-bar-border-focus: var(--color-primary-600);
+  --search-bar-bg: white;
+  --search-bar-placeholder: var(--color-gray-400);
+
+  /* Metric Card */
+  --metric-card-bg: white;
+  --metric-card-border: var(--color-gray-200);
+  --metric-card-padding: var(--spacing-6);
+  --metric-card-radius: var(--radius-lg);
+  --metric-card-shadow: var(--shadow-sm);
+  --metric-card-shadow-hover: var(--shadow-md);
+
+  /* Data Table */
+  --table-border-color: var(--color-gray-200);
+  --table-header-bg: var(--color-gray-50);
+  --table-header-text: var(--color-gray-700);
+  --table-row-hover-bg: var(--color-gray-50);
+  --table-cell-padding: var(--spacing-3) var(--spacing-4);
+
+  /* Tab Navigation */
+  --tab-active-color: var(--color-primary-600);
+  --tab-inactive-color: var(--color-gray-600);
+  --tab-border-active: var(--color-primary-600);
+  --tab-hover-bg: var(--color-gray-50);
+
+  /* Chart */
+  --chart-grid-color: var(--color-gray-200);
+  --chart-axis-color: var(--color-gray-400);
+  --chart-tooltip-bg: var(--color-gray-900);
+  --chart-tooltip-text: white;
+
+  /* Button */
+  --button-primary-bg: var(--color-primary-600);
+  --button-primary-bg-hover: var(--color-primary-700);
+  --button-primary-text: white;
+  --button-secondary-bg: var(--color-gray-100);
+  --button-secondary-bg-hover: var(--color-gray-200);
+  --button-secondary-text: var(--color-gray-700);
+
+  /* Loading */
+  --skeleton-bg: var(--color-gray-100);
+  --skeleton-shimmer: var(--color-gray-200);
+  --spinner-color: var(--color-primary-600);
+
+  /* ========================================================================
+     FINANCIAL DATA SPECIFIC
+     ======================================================================== */
+
+  /* Positive/Negative Indicators */
+  --financial-positive: var(--color-success-500);
+  --financial-positive-bg: var(--color-success-50);
+  --financial-negative: var(--color-error-500);
+  --financial-negative-bg: var(--color-error-50);
+  --financial-neutral: var(--color-gray-500);
+
+  /* Account Categories */
+  --category-asset: #3B82F6;
+  --category-liability: #F59E0B;
+  --category-equity: #8B5CF6;
+  --category-revenue: #10B981;
+  --category-expense: #EF4444;
+  --category-cashflow: #06B6D4;
+
+  /* Number Formatting */
+  --number-positive: var(--color-success-600);
+  --number-negative: var(--color-error-600);
+  --number-neutral: var(--color-gray-900);
+
+  /* ========================================================================
+     ACCESSIBILITY
+     ======================================================================== */
+
+  /* Focus Ring */
+  --focus-ring-color: var(--color-primary-600);
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+  --focus-ring-style: solid;
+
+  /* Minimum Touch Target */
+  --touch-target-min: 44px;
+
+  /* Text Contrast Ratios (for reference) */
+  /* WCAG AA requires 4.5:1 for normal text, 3:1 for large text */
+  /* WCAG AAA requires 7:1 for normal text, 4.5:1 for large text */
+}
+
+/* ============================================================================
+   DARK MODE (Optional)
+   ============================================================================ */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Override colors for dark mode */
+    --color-gray-50: #1F2937;
+    --color-gray-100: #374151;
+    --color-gray-200: #4B5563;
+    --color-gray-300: #6B7280;
+    --color-gray-800: #E5E7EB;
+    --color-gray-900: #F9FAFB;
+
+    /* Component backgrounds */
+    --metric-card-bg: #1F2937;
+    --table-header-bg: #111827;
+    --search-bar-bg: #1F2937;
+
+    /* Borders */
+    --search-bar-border: #4B5563;
+    --table-border-color: #4B5563;
+  }
+}
+
+/* ============================================================================
+   REDUCED MOTION
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-instant: 0ms;
+    --duration-fast: 0ms;
+    --duration-normal: 0ms;
+    --duration-slow: 0ms;
+    --duration-slower: 0ms;
+    --duration-slowest: 0ms;
+  }
+}
+
+/* ============================================================================
+   UTILITY CLASSES
+   ============================================================================ */
+
+/* Text Colors */
+.text-primary { color: var(--color-primary-600); }
+.text-success { color: var(--color-success-600); }
+.text-error { color: var(--color-error-600); }
+.text-warning { color: var(--color-warning-600); }
+.text-gray { color: var(--color-gray-600); }
+
+/* Background Colors */
+.bg-primary { background-color: var(--color-primary-600); }
+.bg-success { background-color: var(--color-success-50); }
+.bg-error { background-color: var(--color-error-50); }
+.bg-warning { background-color: var(--color-warning-50); }
+.bg-gray { background-color: var(--color-gray-100); }
+
+/* Typography */
+.text-xs { font-size: var(--font-size-xs); }
+.text-sm { font-size: var(--font-size-sm); }
+.text-base { font-size: var(--font-size-base); }
+.text-lg { font-size: var(--font-size-lg); }
+.text-xl { font-size: var(--font-size-xl); }
+.text-2xl { font-size: var(--font-size-2xl); }
+
+.font-normal { font-weight: var(--font-weight-normal); }
+.font-medium { font-weight: var(--font-weight-medium); }
+.font-semibold { font-weight: var(--font-weight-semibold); }
+.font-bold { font-weight: var(--font-weight-bold); }
+
+/* Spacing */
+.p-2 { padding: var(--spacing-2); }
+.p-4 { padding: var(--spacing-4); }
+.p-6 { padding: var(--spacing-6); }
+.p-8 { padding: var(--spacing-8); }
+
+.m-2 { margin: var(--spacing-2); }
+.m-4 { margin: var(--spacing-4); }
+.m-6 { margin: var(--spacing-6); }
+.m-8 { margin: var(--spacing-8); }
+
+/* Shadows */
+.shadow-sm { box-shadow: var(--shadow-sm); }
+.shadow { box-shadow: var(--shadow-base); }
+.shadow-md { box-shadow: var(--shadow-md); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
+
+/* Border Radius */
+.rounded-sm { border-radius: var(--radius-sm); }
+.rounded { border-radius: var(--radius-base); }
+.rounded-md { border-radius: var(--radius-md); }
+.rounded-lg { border-radius: var(--radius-lg); }
+.rounded-full { border-radius: var(--radius-full); }
+
+/* Financial Indicators */
+.financial-positive {
+  color: var(--financial-positive);
+}
+
+.financial-negative {
+  color: var(--financial-negative);
+}
+
+.financial-neutral {
+  color: var(--financial-neutral);
+}
+
+/* Tabular Numbers (for financial data) */
+.tabular-nums {
+  font-family: var(--font-numeric);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Focus Styles */
+.focus-ring:focus-visible {
+  outline: var(--focus-ring-width) var(--focus-ring-style) var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}

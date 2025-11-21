@@ -1,0 +1,714 @@
+openapi: 3.0.0
+info:
+  title: Open DART API
+  description: |
+    Korean Financial Supervisory Service (FSS) Electronic Disclosure System API
+
+    Provides comprehensive access to corporate financial data, filings, and regulatory disclosures
+    for all listed and KOSDAQ companies in South Korea.
+
+    Base URL: https://opendart.fss.or.kr/api
+  version: "1.0.0"
+  contact:
+    name: Financial Supervisory Service
+    url: https://opendart.fss.or.kr
+  license:
+    name: Public API
+    url: https://opendart.fss.or.kr
+
+servers:
+  - url: https://opendart.fss.or.kr/api
+    description: Open DART API Production Server
+  - url: https://opendart.fss.or.kr
+    description: Web Interface
+
+tags:
+  - name: Company Information
+    description: Company lookup and search endpoints
+  - name: Financial Statements
+    description: Financial data including balance sheet, income statement, cash flow
+  - name: Filings & Reports
+    description: Corporate filings and regulatory reports
+  - name: Dividends & Shareholder
+    description: Dividend and major shareholder information
+  - name: Utility
+    description: Utility endpoints for bulk data
+
+paths:
+  /company.json:
+    get:
+      summary: Get Company Information by Code
+      description: |
+        Retrieves basic company information using 8-digit corporate code.
+
+        The corporate code is a unique identifier assigned to all Korean companies.
+      tags:
+        - Company Information
+      parameters:
+        - name: corp_code
+          in: query
+          description: 8-digit corporate code (고유번호)
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{8}$'
+            example: "00126380"
+        - name: crtfc_key
+          in: query
+          description: API authentication key
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Company information retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "000"
+                    description: Response status code (000 = success)
+                  message:
+                    type: string
+                    example: "정상"
+                  corp_code:
+                    type: string
+                    example: "00126380"
+                  corp_name:
+                    type: string
+                    example: "삼성전자"
+                  stock_code:
+                    type: string
+                    nullable: true
+                    example: "005930"
+                  modify_date:
+                    type: string
+                    format: date
+                    example: "20231215"
+        "400":
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "404":
+          description: Company not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /companysearch.json:
+    get:
+      summary: Search Companies by Name
+      description: |
+        Search for companies by name with pagination support.
+
+        Korean language company names produce better results.
+      tags:
+        - Company Information
+      parameters:
+        - name: corp_name
+          in: query
+          description: Company name (Korean preferred)
+          required: true
+          schema:
+            type: string
+            example: "삼성"
+        - name: page_no
+          in: query
+          description: Page number (starts at 1)
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: page_count
+          in: query
+          description: Number of results per page
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+        - name: crtfc_key
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "000"
+                  message:
+                    type: string
+                  page_count:
+                    type: integer
+                    example: 10
+                  total_count:
+                    type: integer
+                    example: 128
+                  current_page:
+                    type: integer
+                    example: 1
+                  list:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        corp_code:
+                          type: string
+                          example: "00126380"
+                        corp_name:
+                          type: string
+                          example: "삼성전자"
+                        corp_name_eng:
+                          type: string
+                          example: "SAMSUNG ELECTRONICS"
+                        stock_code:
+                          type: string
+                          nullable: true
+                          example: "005930"
+                        modify_date:
+                          type: string
+                          format: date
+
+  /corpCode.json:
+    get:
+      summary: Get Full Company List
+      description: |
+        Downloads complete list of all registered companies.
+
+        Returns compressed zip file containing XML data.
+      tags:
+        - Utility
+      parameters:
+        - name: crtfc_key
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Company list zip file
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+
+  /list.json:
+    get:
+      summary: Get Company Filings List
+      description: |
+        Retrieves list of all filings and reports for a company.
+
+        Includes annual reports, quarterly reports, and special disclosures.
+      tags:
+        - Filings & Reports
+      parameters:
+        - name: corp_code
+          in: query
+          description: 8-digit corporate code
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{8}$'
+        - name: pageNo
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageCount
+          in: query
+          schema:
+            type: integer
+            default: 10
+            maximum: 100
+        - name: crtfc_key
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Filing list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  page_no:
+                    type: integer
+                  page_count:
+                    type: integer
+                  total_count:
+                    type: integer
+                  list:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Filing'
+
+  /document.json:
+    get:
+      summary: Get Filing Details
+      description: |
+        Retrieves detailed information about a specific filing.
+
+        Use receipt_no from /list.json endpoint.
+      tags:
+        - Filings & Reports
+      parameters:
+        - name: receipt_no
+          in: query
+          description: Receipt number from filing list
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{20}$'
+        - name: pageNo
+          in: query
+          schema:
+            type: integer
+        - name: pageCount
+          in: query
+          schema:
+            type: integer
+            maximum: 100
+        - name: crtfc_key
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Filing details
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /fnlttSinglAcntAll.json:
+    get:
+      summary: Get Financial Statements
+      description: |
+        Retrieves complete financial statements including:
+        - Balance Sheet (재무상태표)
+        - Income Statement (손익계산서)
+        - Cash Flow Statement (현금흐름표)
+        - Statement of Changes in Equity
+
+        Supports both consolidated and non-consolidated statements.
+      tags:
+        - Financial Statements
+      parameters:
+        - name: corp_code
+          in: query
+          description: 8-digit corporate code
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{8}$'
+        - name: bsns_year
+          in: query
+          description: Business year (fiscal year)
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{4}$'
+            example: "2023"
+        - name: reprt_code
+          in: query
+          description: |
+            Report type code:
+            - 11011: Annual Report (감사보고서)
+            - 11012: Half-year Report
+            - 11013: 3Q Report
+            - 11014: 1Q Report
+          required: true
+          schema:
+            type: string
+            enum:
+              - "11011"
+              - "11012"
+              - "11013"
+              - "11014"
+            example: "11011"
+        - name: fs_div
+          in: query
+          description: |
+            Financial statement division:
+            - 1001: Consolidated (연결)
+            - 1002: Non-consolidated (별도)
+          schema:
+            type: string
+            enum:
+              - "1001"
+              - "1002"
+            default: "1001"
+        - name: crtfc_key
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Financial statement data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+                  list:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FinancialAccount'
+        "400":
+          description: Invalid year or report type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /fnlttSinglAcnt.json:
+    get:
+      summary: Get Available Financial Statements
+      description: |
+        Returns list of available financial statements for a company.
+
+        Use this to discover which years and report types have data.
+      tags:
+        - Financial Statements
+      parameters:
+        - name: corp_code
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{8}$'
+        - name: crtfc_key
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of available statements
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  list:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        rcept_no:
+                          type: string
+                        reprt_code:
+                          type: string
+                        bsns_year:
+                          type: string
+                        fs_div:
+                          type: string
+
+  /dividend.json:
+    get:
+      summary: Get Dividend Information
+      description: |
+        Retrieves dividend payment information for a listed company.
+      tags:
+        - Dividends & Shareholder
+      parameters:
+        - name: stock_code
+          in: query
+          description: 6-digit stock code
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{6}$'
+        - name: crtfc_key
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Dividend information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  list:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        payment_date:
+                          type: string
+                          format: date
+                        dividend_amount:
+                          type: number
+                        dividend_rate:
+                          type: number
+
+  /majorstock.json:
+    get:
+      summary: Get Major Shareholder Information
+      description: |
+        Retrieves information about major shareholders and ownership changes.
+      tags:
+        - Dividends & Shareholder
+      parameters:
+        - name: corp_code
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{8}$'
+        - name: crtfc_key
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: pageNo
+          in: query
+          schema:
+            type: integer
+        - name: pageCount
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Major shareholder information
+          content:
+            application/json:
+              schema:
+                type: object
+
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Error status code (non-000 indicates error)
+          example: "010"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "검색 결과가 없습니다"
+
+    Filing:
+      type: object
+      description: Corporate filing information
+      properties:
+        corp_code:
+          type: string
+          example: "00126380"
+        corp_name:
+          type: string
+          example: "삼성전자"
+        filing_type:
+          type: string
+          description: Filing type code
+          example: "A001"
+        form_code:
+          type: string
+          example: "감사보고서"
+        event_date:
+          type: string
+          format: date
+          description: Event occurrence date
+          example: "20231231"
+        report_nm:
+          type: string
+          example: "2023년 감사보고서"
+        receipt_no:
+          type: string
+          description: Unique receipt number
+          example: "20240314000123"
+        filing_date:
+          type: string
+          format: date
+          example: "20240314"
+        mod_date:
+          type: string
+          format: date
+          description: Last modification date
+          example: "20240314"
+        disclosure_date:
+          type: string
+          format: date
+          example: "20240314"
+
+    FinancialAccount:
+      type: object
+      description: Individual account line from financial statement
+      properties:
+        rcept_no:
+          type: string
+          description: Receipt number of filing
+          example: "20240314000123"
+        reprt_code:
+          type: string
+          description: Report code (11011, 11012, etc.)
+          example: "11011"
+        reprt_nm:
+          type: string
+          description: Report name
+          example: "2023년 감사보고서"
+        fs_nm:
+          type: string
+          description: Financial statement name
+          example: "재무제표"
+        sj_div:
+          type: string
+          description: |
+            Statement division code:
+            - BS: Balance Sheet
+            - IS: Income Statement
+            - CF: Cash Flow
+          enum:
+            - "BS"
+            - "IS"
+            - "CF"
+            - "SCE"
+        sj_nm:
+          type: string
+          description: Statement name (Korean)
+          example: "재무상태표"
+        account_id:
+          type: string
+          description: Hierarchical account code
+          example: "1000000"
+        account_nm:
+          type: string
+          description: Account name
+          example: "자산"
+        account_detail:
+          type: string
+          nullable: true
+          description: Detailed account description
+          example: "유동자산"
+        thstrm_nm:
+          type: string
+          description: Current period label
+          example: "2023년 12월 31일"
+        thstrm_add_nm:
+          type: string
+          nullable: true
+          description: Additional period label
+        thstrm_amount:
+          type: string
+          description: Current period amount (in Korean Won)
+          example: "123456789000"
+        frmtrm_nm:
+          type: string
+          description: Previous period label
+          example: "2022년 12월 31일"
+        frmtrm_amount:
+          type: string
+          nullable: true
+          description: Previous period amount
+          example: "120000000000"
+        currency:
+          type: string
+          description: Currency code
+          example: "KRW"
+        unit:
+          type: string
+          description: Unit of currency
+          example: "원"
+
+    CompanyData:
+      type: object
+      description: Company basic information
+      properties:
+        corp_code:
+          type: string
+          pattern: '^\d{8}$'
+          example: "00126380"
+        corp_name:
+          type: string
+          example: "삼성전자"
+        corp_name_eng:
+          type: string
+          nullable: true
+          example: "SAMSUNG ELECTRONICS"
+        stock_code:
+          type: string
+          nullable: true
+          pattern: '^\d{6}$'
+          example: "005930"
+        modify_date:
+          type: string
+          format: date
+          example: "20231215"
+
+    ApiResponse:
+      type: object
+      description: Standard API response wrapper
+      properties:
+        status:
+          type: string
+          description: Response status code
+          enum:
+            - "000"
+            - "010"
+            - "011"
+            - "013"
+            - "014"
+          example: "000"
+        message:
+          type: string
+          description: Status message
+          example: "정상"
+
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      in: query
+      name: crtfc_key
+      description: API authentication key from Open DART
+
+security:
+  - apiKey: []
+
+x-rate-limit:
+  concurrent-requests: 10
+  daily-limit: 10000
+  requests-per-second: 10
+  minimum-interval-ms: 100
+
+x-endpoints-summary:
+  total: 11
+  by-category:
+    company-information: 3
+    financial-statements: 2
+    filings-reports: 2
+    dividends-shareholder: 2
+    utility: 2

@@ -1,0 +1,1181 @@
+openapi: 3.0.3
+info:
+  title: Stock Market & Congressional Trading API
+  description: |
+    Comprehensive API for stock market data, technical analysis, and congressional trading information.
+
+    Data Sources:
+    - Real-time quotes from IEX Cloud
+    - Fundamentals from Finnhub
+    - Technical indicators from Finnhub/Alpha Vantage
+    - Insider/Congressional trades from SEC EDGAR
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@stockapp.com
+  license:
+    name: MIT
+
+servers:
+  - url: https://api.stockapp.com/v1
+    description: Production server
+  - url: http://localhost:3000/v1
+    description: Development server
+
+paths:
+  /stocks/{symbol}/quote:
+    get:
+      summary: Get real-time stock quote
+      description: |
+        Returns current stock price, change, and related metrics.
+        Data is cached for 5 minutes.
+        Source: IEX Cloud (real-time, no delay)
+      operationId: getStockQuote
+      tags:
+        - Quotes
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[A-Z]{1,5}$'
+          description: Stock ticker symbol (e.g., AAPL, MSFT)
+          example: AAPL
+      responses:
+        '200':
+          description: Successful response with stock quote
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+              example:
+                symbol: AAPL
+                price: 172.45
+                change: 1.25
+                changePercent: 0.73
+                volume: 52847100
+                marketCap: 2741000000000
+                peRatio: 28.5
+                timestamp: '2024-11-21T16:00:00Z'
+                dataSource: IEX_CLOUD
+                cached: false
+        '400':
+          description: Invalid symbol format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Symbol not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds to wait before retrying
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitError'
+        '503':
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /stocks/quotes/bulk:
+    post:
+      summary: Get multiple stock quotes
+      description: |
+        Retrieve quotes for multiple symbols in a single request.
+        Efficiently handles up to 50 symbols per request.
+      operationId: getBulkQuotes
+      tags:
+        - Quotes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                symbols:
+                  type: array
+                  items:
+                    type: string
+                    pattern: '^[A-Z]{1,5}$'
+                  minItems: 1
+                  maxItems: 50
+                  example: ['AAPL', 'MSFT', 'GOOGL']
+            example:
+              symbols: ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA']
+      responses:
+        '200':
+          description: Array of stock quotes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Quote'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitError'
+
+  /stocks/{symbol}/fundamentals:
+    get:
+      summary: Get company fundamentals
+      description: |
+        Comprehensive company information including profile, statistics, and earnings.
+        Data is cached for 7 days.
+        Source: Finnhub + IEX Cloud
+      operationId: getFundamentals
+      tags:
+        - Fundamentals
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[A-Z]{1,5}$'
+          example: AAPL
+      responses:
+        '200':
+          description: Company fundamentals
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fundamentals'
+        '400':
+          description: Invalid symbol format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Company not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /stocks/{symbol}/technical:
+    get:
+      summary: Get technical indicators
+      description: |
+        Historical candle data and calculated technical indicators.
+        Supports daily, weekly, and monthly timeframes.
+        Indicators: SMA(20), SMA(50), SMA(200), RSI(14)
+      operationId: getTechnicalData
+      tags:
+        - Technical Analysis
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[A-Z]{1,5}$'
+          example: AAPL
+        - name: startDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Start date (YYYY-MM-DD)
+          example: '2024-01-01'
+        - name: endDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: End date (YYYY-MM-DD)
+          example: '2024-11-21'
+        - name: resolution
+          in: query
+          schema:
+            type: string
+            enum: [1m, 5m, 15m, 30m, 60m, D, W, M]
+            default: D
+          description: Candle resolution
+      responses:
+        '200':
+          description: Technical data with indicators
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TechnicalData'
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /stocks/{symbol}/chart:
+    get:
+      summary: Get historical chart data
+      description: |
+        OHLCV data for charting purposes.
+        Common ranges: 1m (1 month), 3m, 6m, ytd, 1y, 2y, 5y, max
+      operationId: getChartData
+      tags:
+        - Charts
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[A-Z]{1,5}$'
+          example: AAPL
+        - name: range
+          in: query
+          schema:
+            type: string
+            enum: [1m, 3m, 6m, ytd, 1y, 2y, 5y, max]
+            default: 1y
+          description: Time range for chart data
+      responses:
+        '200':
+          description: Chart data with OHLCV values
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartData'
+
+  /stocks/{symbol}/news:
+    get:
+      summary: Get latest company news
+      description: |
+        Latest news articles and press releases for a company.
+        Data is cached for 1 hour.
+        Source: Finnhub
+      operationId: getCompanyNews
+      tags:
+        - News
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[A-Z]{1,5}$'
+          example: AAPL
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+          description: Number of articles to return
+      responses:
+        '200':
+          description: Array of news articles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NewsResponse'
+
+  /insider-trades:
+    get:
+      summary: Get insider trading transactions
+      description: |
+        Congressional and insider stock trading data from SEC Form 4 filings.
+        Data is updated daily.
+        Source: SEC EDGAR + Capitol Trades data
+      operationId: getInsiderTrades
+      tags:
+        - Insider Trading
+      parameters:
+        - name: symbol
+          in: query
+          schema:
+            type: string
+            pattern: '^[A-Z]{1,5}$'
+          description: Filter by stock symbol
+          example: AAPL
+        - name: filerName
+          in: query
+          schema:
+            type: string
+          description: Filter by filer/person name
+          example: 'Nancy Pelosi'
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [buy, sell, all]
+            default: all
+          description: Filter by transaction type
+        - name: days
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 365
+            default: 30
+          description: Look back days (1-365)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: Number of records to return
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Pagination offset
+      responses:
+        '200':
+          description: Array of insider transactions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsiderTradesResponse'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /insider-trades/{tradeId}:
+    get:
+      summary: Get insider trade details
+      description: |
+        Detailed information about a specific insider trading transaction,
+        including SEC filing link and document reference.
+      operationId: getInsiderTradeDetail
+      tags:
+        - Insider Trading
+      parameters:
+        - name: tradeId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Insider trade record ID
+          example: '12345'
+      responses:
+        '200':
+          description: Insider trade details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsiderTrade'
+        '404':
+          description: Trade not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /congressional-members:
+    get:
+      summary: Get congressional members with recent trades
+      description: |
+        List of US Congress members with recent stock trading activity.
+      operationId: getCongressionalMembers
+      tags:
+        - Congressional Trading
+      parameters:
+        - name: chamber
+          in: query
+          schema:
+            type: string
+            enum: [house, senate, both]
+            default: both
+          description: Congressional chamber
+        - name: days
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 365
+            default: 30
+          description: Look back days
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: Number of members to return
+      responses:
+        '200':
+          description: Array of congressional members with trade info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CongressionalMembersResponse'
+
+  /congressional-members/{memberId}/trades:
+    get:
+      summary: Get trades for specific congressional member
+      description: |
+        All stock trading activity for a specific US Congress member.
+      operationId: getMemberTrades
+      tags:
+        - Congressional Trading
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Congressional member ID
+          example: 'nancy-pelosi'
+        - name: days
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 365
+            default: 90
+          description: Look back days
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: Number of trades to return
+      responses:
+        '200':
+          description: Array of member trades
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  memberId:
+                    type: string
+                  name:
+                    type: string
+                  chamber:
+                    type: string
+                    enum: [house, senate]
+                  trades:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/InsiderTrade'
+                  summary:
+                    $ref: '#/components/schemas/TradingSummary'
+
+  /watchlist:
+    get:
+      summary: Get user watchlist
+      description: |
+        Retrieve authenticated user's stock watchlist with latest quotes
+      operationId: getWatchlist
+      tags:
+        - Watchlist
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User watchlist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WatchlistResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: Add stock to watchlist
+      description: Add a stock symbol to user watchlist
+      operationId: addToWatchlist
+      tags:
+        - Watchlist
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                symbol:
+                  type: string
+                  pattern: '^[A-Z]{1,5}$'
+                  example: AAPL
+              required: [symbol]
+      responses:
+        '201':
+          description: Added to watchlist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WatchlistItem'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /watchlist/{symbol}:
+    delete:
+      summary: Remove stock from watchlist
+      description: Remove a stock symbol from user watchlist
+      operationId: removeFromWatchlist
+      tags:
+        - Watchlist
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[A-Z]{1,5}$'
+          example: AAPL
+      responses:
+        '204':
+          description: Removed from watchlist
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /portfolio:
+    get:
+      summary: Get user portfolio
+      description: Get authenticated user's investment portfolio and performance
+      operationId: getPortfolio
+      tags:
+        - Portfolio
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User portfolio
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /health:
+    get:
+      summary: Health check
+      description: API health status and data source availability
+      operationId: healthCheck
+      tags:
+        - System
+      responses:
+        '200':
+          description: System healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+        '503':
+          description: Service degraded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+  /status:
+    get:
+      summary: Get API status and rate limits
+      description: Current API status, rate limit information, and data freshness
+      operationId: getStatus
+      tags:
+        - System
+      responses:
+        '200':
+          description: API status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+
+components:
+  schemas:
+    Quote:
+      type: object
+      properties:
+        symbol:
+          type: string
+          description: Stock ticker symbol
+          example: AAPL
+        price:
+          type: number
+          format: decimal
+          description: Current price
+          example: 172.45
+        change:
+          type: number
+          format: decimal
+          description: Price change in dollars
+          example: 1.25
+        changePercent:
+          type: number
+          format: decimal
+          description: Percentage change
+          example: 0.73
+        volume:
+          type: integer
+          description: Trading volume
+          example: 52847100
+        marketCap:
+          type: integer
+          description: Market capitalization
+          example: 2741000000000
+        peRatio:
+          type: number
+          format: decimal
+          description: Price-to-earnings ratio
+          example: 28.5
+        timestamp:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        dataSource:
+          type: string
+          enum: [IEX_CLOUD, FINNHUB, POLYGON]
+          description: Data source
+        cached:
+          type: boolean
+          description: Whether data is from cache
+      required:
+        - symbol
+        - price
+        - change
+        - changePercent
+        - timestamp
+        - dataSource
+
+    Fundamentals:
+      type: object
+      properties:
+        symbol:
+          type: string
+        profile:
+          type: object
+          properties:
+            name:
+              type: string
+              example: Apple Inc.
+            sector:
+              type: string
+              example: Technology
+            industry:
+              type: string
+              example: Consumer Electronics
+            website:
+              type: string
+              format: uri
+            description:
+              type: string
+            country:
+              type: string
+              example: US
+            employees:
+              type: integer
+        stats:
+          type: object
+          properties:
+            marketCap:
+              type: integer
+            peRatio:
+              type: number
+            eps:
+              type: number
+            dividend:
+              type: number
+            week52High:
+              type: number
+            week52Low:
+              type: number
+        earnings:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              quarter:
+                type: integer
+              year:
+                type: integer
+              actual:
+                type: number
+              estimate:
+                type: number
+              surprise:
+                type: number
+        timestamp:
+          type: string
+          format: date-time
+
+    TechnicalData:
+      type: object
+      properties:
+        symbol:
+          type: string
+        candles:
+          type: array
+          items:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+              open:
+                type: number
+                format: decimal
+              high:
+                type: number
+                format: decimal
+              low:
+                type: number
+                format: decimal
+              close:
+                type: number
+                format: decimal
+              volume:
+                type: integer
+        indicators:
+          type: object
+          properties:
+            sma20:
+              type: number
+              format: decimal
+              description: 20-day Simple Moving Average
+            sma50:
+              type: number
+              format: decimal
+              description: 50-day Simple Moving Average
+            sma200:
+              type: number
+              format: decimal
+              description: 200-day Simple Moving Average
+            rsi14:
+              type: number
+              format: decimal
+              description: 14-day Relative Strength Index
+        timestamp:
+          type: string
+          format: date-time
+
+    ChartData:
+      type: object
+      properties:
+        symbol:
+          type: string
+        range:
+          type: string
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              open:
+                type: number
+              high:
+                type: number
+              low:
+                type: number
+              close:
+                type: number
+              volume:
+                type: integer
+
+    NewsResponse:
+      type: object
+      properties:
+        symbol:
+          type: string
+        count:
+          type: integer
+        articles:
+          type: array
+          items:
+            type: object
+            properties:
+              headline:
+                type: string
+              summary:
+                type: string
+              source:
+                type: string
+              url:
+                type: string
+                format: uri
+              image:
+                type: string
+                format: uri
+              timestamp:
+                type: string
+                format: date-time
+              sentiment:
+                type: string
+                enum: [positive, neutral, negative]
+
+    InsiderTrade:
+      type: object
+      properties:
+        tradeId:
+          type: string
+          description: Unique trade identifier
+        filerName:
+          type: string
+          description: Name of insider/congressional member
+          example: Nancy Pelosi
+        filerTitle:
+          type: string
+          description: Title/position of filer
+          example: US Representative
+        symbol:
+          type: string
+          description: Stock ticker symbol
+          example: AAPL
+        transactionDate:
+          type: string
+          format: date
+          description: Date of transaction
+        transactionType:
+          type: string
+          enum: [buy, sell, grant, exercise]
+          description: Type of transaction
+        shares:
+          type: integer
+          description: Number of shares traded
+        price:
+          type: number
+          format: decimal
+          description: Price per share
+        totalValue:
+          type: number
+          format: decimal
+          description: Total transaction value
+        formType:
+          type: string
+          enum: [Form 4, Form 5, 8-K]
+          description: SEC form type
+        secFilingLink:
+          type: string
+          format: uri
+          description: Link to SEC filing document
+        filedDate:
+          type: string
+          format: date
+          description: Date filed with SEC
+        createdAt:
+          type: string
+          format: date-time
+
+    InsiderTradesResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+          description: Total count of matching trades
+        offset:
+          type: integer
+        limit:
+          type: integer
+        trades:
+          type: array
+          items:
+            $ref: '#/components/schemas/InsiderTrade'
+        summary:
+          $ref: '#/components/schemas/TradingSummary'
+
+    TradingSummary:
+      type: object
+      properties:
+        totalTrades:
+          type: integer
+        totalBuys:
+          type: integer
+        totalSells:
+          type: integer
+        totalBuyValue:
+          type: number
+          format: decimal
+        totalSellValue:
+          type: number
+          format: decimal
+        netValue:
+          type: number
+          format: decimal
+        averagePrice:
+          type: number
+          format: decimal
+
+    CongressionalMembersResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+        members:
+          type: array
+          items:
+            type: object
+            properties:
+              memberId:
+                type: string
+              name:
+                type: string
+              chamber:
+                type: string
+                enum: [house, senate]
+              state:
+                type: string
+              party:
+                type: string
+              recentTrades:
+                type: integer
+                description: Number of trades in period
+              lastTradeDate:
+                type: string
+                format: date
+
+    WatchlistItem:
+      type: object
+      properties:
+        symbol:
+          type: string
+        quote:
+          $ref: '#/components/schemas/Quote'
+        addedAt:
+          type: string
+          format: date-time
+
+    WatchlistResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/WatchlistItem'
+
+    PortfolioResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+        totalValue:
+          type: number
+          format: decimal
+        totalGain:
+          type: number
+          format: decimal
+        gainPercent:
+          type: number
+          format: decimal
+        holdings:
+          type: array
+          items:
+            type: object
+            properties:
+              symbol:
+                type: string
+              shares:
+                type: number
+              averageCost:
+                type: number
+              currentPrice:
+                type: number
+              totalValue:
+                type: number
+              gain:
+                type: number
+              gainPercent:
+                type: number
+
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, down]
+        timestamp:
+          type: string
+          format: date-time
+        uptime:
+          type: number
+          description: Uptime in seconds
+        services:
+          type: object
+          properties:
+            cache:
+              type: string
+              enum: [up, down]
+            database:
+              type: string
+              enum: [up, down]
+            iexCloud:
+              type: string
+              enum: [up, down, degraded]
+            finnhub:
+              type: string
+              enum: [up, down, degraded]
+            secEdgar:
+              type: string
+              enum: [up, down, degraded]
+
+    StatusResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [operational, degraded, maintenance]
+        version:
+          type: string
+        uptime:
+          type: number
+        timestamp:
+          type: string
+          format: date-time
+        rateLimits:
+          type: object
+          properties:
+            iexCloud:
+              type: object
+              properties:
+                used:
+                  type: integer
+                available:
+                  type: integer
+                resetTime:
+                  type: string
+                  format: date-time
+            finnhub:
+              type: object
+              properties:
+                used:
+                  type: integer
+                available:
+                  type: integer
+                resetTime:
+                  type: string
+                  format: date-time
+        dataFreshness:
+          type: object
+          properties:
+            quotes:
+              type: string
+              example: 5 minutes ago
+            fundamentals:
+              type: string
+              example: 2 days ago
+            insiderTrades:
+              type: string
+              example: 6 hours ago
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error type/code
+        message:
+          type: string
+          description: Human-readable error message
+        timestamp:
+          type: string
+          format: date-time
+        path:
+          type: string
+          description: Request path that caused error
+      required:
+        - error
+        - message
+
+    RateLimitError:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            retryAfter:
+              type: integer
+              description: Seconds to wait before retrying
+            apiName:
+              type: string
+              description: Which API is rate limited
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authenticated endpoints
+
+tags:
+  - name: Quotes
+    description: Real-time stock price data
+  - name: Fundamentals
+    description: Company information and financial metrics
+  - name: Technical Analysis
+    description: Technical indicators and chart data
+  - name: Charts
+    description: Historical OHLCV data for charting
+  - name: News
+    description: Company news and press releases
+  - name: Insider Trading
+    description: SEC Form 4 insider transaction data
+  - name: Congressional Trading
+    description: US Congress member stock trading data
+  - name: Watchlist
+    description: User stock watchlist management
+  - name: Portfolio
+    description: User investment portfolio tracking
+  - name: System
+    description: API health and status endpoints
+
+externalDocs:
+  description: Find more information in our documentation
+  url: https://docs.stockapp.com
+
