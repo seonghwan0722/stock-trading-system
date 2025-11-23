@@ -41,7 +41,7 @@
 **.env 파일 생성:**
 ```bash
 # DART API (재무제표 분석용)
-DART_API_KEY=your_dart_api_key
+dart_api=your_dart_api_key
 
 # 한국투자증권 API (자동매매용)
 KIS_APP_KEY=your_kis_app_key
@@ -300,7 +300,7 @@ fetch('/api/dart/financials/00126380?year=2023&report_type=11011', {
 ```
 Error: DART_API_KEY not configured
 ```
-→ `.env` 파일에 `DART_API_KEY` 추가
+→ `.env` 파일에 `dart_api` 추가
 
 ### 종목 검색 결과 없음
 ```
@@ -339,9 +339,9 @@ Error 013: No data found
 1. https://opendart.fss.or.kr/ 접속
 2. 회원가입 → 로그인
 3. "오픈API 이용현황" → "인증키 신청"
-4. `.env` 파일에 `DART_API_KEY=발급받은키` 추가
+4. `.env` 파일에 `dart_api=발급받은키` 추가
 
-**완료 여부**: [ ]
+**완료 여부**: [✓] (이미 설정됨)
 
 ---
 
@@ -373,22 +373,30 @@ python backend/dart/collect_companies.py
 
 ### 🟡 선택적 작업
 
-#### 4. TDD 환경 설정 (선택)
+#### 4. TDD 환경 설정 (pytest)
 **필요성**: 테스트 주도 개발을 원하는 경우
-**소요 시간**: 10분
+**소요 시간**: 2분
 **참조 문서**: `docs/TDD_SETUP_OPTIONS.md`
 
-**결정 필요**:
-- [ ] TDD 프레임워크 선택 (pytest 추천 / unittest / 건너뛰기)
-- [ ] 테스트 디렉토리 구조 생성
-- [ ] `pytest.ini`, `.coveragerc` 설정 복사
+**설정 완료 항목**:
+- [✓] pytest 프레임워크 선택
+- [✓] 테스트 디렉토리 구조 생성 (`tests/unit`, `tests/integration`)
+- [✓] `pytest.ini`, `.coveragerc` 설정 완료
+- [✓] 샘플 테스트 파일 생성
 
-**추천**: pytest 설치 후 점진적으로 테스트 추가
+**패키지 설치** (requirements.txt에 이미 포함됨):
 ```bash
-pip install pytest pytest-flask pytest-cov pytest-mock
+pip install pytest pytest-flask pytest-cov pytest-mock pytest-asyncio
 ```
 
-**완료 여부**: [ ]
+**테스트 실행**:
+```bash
+pytest                    # 모든 테스트
+pytest -m unit           # 유닛 테스트만
+pytest -m integration    # 통합 테스트만
+```
+
+**완료 여부**: [✓]
 
 ---
 

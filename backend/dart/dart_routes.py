@@ -4,12 +4,17 @@ Open DART 금융감독원 전자공시 시스템 API 라우트
 """
 
 from flask import Blueprint, jsonify, request
-from backend.auth import token_required
-from backend.dart.dart_api_client import DartAPIClient, FinancialDataAnalyzer
-from backend.database.stock_db import StockDatabase
+import sys
 import os
 from typing import Dict, List
 import logging
+
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from auth import token_required
+from dart.dart_api_client import DartAPIClient, FinancialDataAnalyzer
+from database.stock_db import StockDatabase
 
 logger = logging.getLogger(__name__)
 
@@ -518,4 +523,5 @@ def initialize_dart_module():
 
 
 # Blueprint에 초기화 함수 추가
-dart_bp.before_app_first_request(initialize_dart_module)
+# Flask 3.0+에서는 before_app_first_request가 제거됨
+# app.py에서 직접 호출하도록 변경

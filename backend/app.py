@@ -4,26 +4,35 @@ import schedule
 import threading
 import time
 from datetime import datetime
+import sys
+import os
 
-from backend.config import Config
-from backend.auth import AuthManager, token_required
-from backend.api.kis_api import KISApi
-from backend.trading.buy_strategy import BuyStrategy
-from backend.trading.sell_strategy import SellStrategy
-from backend.news.news_summary import NewsSummarizer
-from backend.telegram.bot import TelegramNotifier
-from backend.trading.strategy_manager import get_strategy_manager
-from backend.scraper.capitol_trades_scraper import CapitolTradesScraper
-from backend.scraper.stocknear_scraper import scrape_stocknear_sync
-from backend.scraper.stock_analysis_scraper import StockAnalysisScraper
-from backend.scraper.chart_exchange_scraper import ChartExchangeScraper
-from backend.dart.dart_routes import dart_bp
+# Add backend directory to Python path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from config import Config
+from auth import AuthManager, token_required
+from api.kis_api import KISApi
+from trading.buy_strategy import BuyStrategy
+from trading.sell_strategy import SellStrategy
+from news.news_summary import NewsSummarizer
+from telegram_notifier.bot import TelegramNotifier, get_telegram_notifier
+from trading.strategy_manager import get_strategy_manager
+from scraper.capitol_trades_scraper import CapitolTradesScraper
+from scraper.stocknear_scraper import scrape_stocknear_sync
+from scraper.stock_analysis_scraper import StockAnalysisScraper
+from scraper.chart_exchange_scraper import ChartExchangeScraper
+from dart.dart_routes import dart_bp, initialize_dart_module
 
 app = Flask(__name__, static_folder='../frontend')
 CORS(app)
 
 # Register DART Blueprint
 app.register_blueprint(dart_bp)
+
+# Initialize DART module (Flask 3.0+ compatibility)
+with app.app_context():
+    initialize_dart_module()
 
 # 서비스 인스턴스 초기화
 kis_api = KISApi()

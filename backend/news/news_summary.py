@@ -2,7 +2,10 @@ import requests
 from bs4 import BeautifulSoup
 import anthropic
 from datetime import datetime
-from backend.config import Config
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from config import Config
 
 
 class NewsSummarizer:

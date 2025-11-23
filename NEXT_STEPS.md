@@ -8,43 +8,7 @@
 
 ## ⚡ 3분 안에 시작하기
 
-### 1️⃣ DART API 키 설정 (1분)
 
-```bash
-# .env 파일 열기
-notepad .env
-
-# 또는
-vim .env
-```
-
-**`.env` 파일에 추가**:
-```
-DART_API_KEY=발급받은_DART_API_키
-```
-
-**API 키 발급 방법**:
-1. https://opendart.fss.or.kr/ 접속
-2. 회원가입 → 로그인
-3. "오픈API 이용현황" → "인증키 신청" 클릭
-4. 발급된 키를 복사하여 `.env`에 붙여넣기
-
----
-
-### 2️⃣ 패키지 설치 (1분)
-
-```bash
-pip install -r config/requirements.txt
-```
-
-**설치되는 주요 패키지**:
-- Flask
-- Requests
-- python-dotenv
-- BeautifulSoup4
-- Pandas
-
----
 
 ### 3️⃣ 종목 데이터 수집 (1분)
 

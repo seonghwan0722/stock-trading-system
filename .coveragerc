@@ -1,0 +1,64 @@
+[run]
+# 커버리지 측정할 소스 디렉토리
+source = backend
+
+# 커버리지 측정에서 제외할 파일/디렉토리
+omit =
+    */tests/*
+    */venv/*
+    */__pycache__/*
+    */site-packages/*
+    backend/config.py
+    */migrations/*
+
+# 브랜치 커버리지도 측정
+branch = True
+
+[report]
+# 커버리지 리포트에서 제외할 라인 패턴
+exclude_lines =
+    # 기본 제외 패턴
+    pragma: no cover
+
+    # 디버그 관련
+    def __repr__
+    def __str__
+
+    # 추상 메서드
+    raise AssertionError
+    raise NotImplementedError
+
+    # 타입 체크 관련
+    if TYPE_CHECKING:
+    if typing.TYPE_CHECKING:
+
+    # 방어적 코드
+    if __name__ == .__main__.:
+    if 0:
+    if False:
+
+    # Pass 구문
+    pass
+
+    # 로깅
+    logger.debug
+
+# 정확도 설정 (소수점 자리)
+precision = 2
+
+# 결과를 파일로 저장
+show_missing = True
+
+# 커버리지 임계값 미달 시 실패 처리 (옵션)
+# fail_under = 80
+
+[html]
+# HTML 리포트 저장 디렉토리
+directory = htmlcov
+
+# HTML 리포트에 제목 추가
+title = Stock Trading Bot - Test Coverage Report
+
+[xml]
+# XML 리포트 저장 경로 (CI/CD용)
+output = coverage.xml

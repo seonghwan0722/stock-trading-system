@@ -7,7 +7,10 @@
 import json
 from typing import Dict, Any, Optional
 from pathlib import Path
-from backend.trading.strategies import (
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from trading.strategies import (
     get_buy_strategy,
     get_sell_strategy,
     get_all_strategies_info,

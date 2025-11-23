@@ -747,18 +747,10 @@ export interface DartFinancialStatementItem {
   currency: string;             // Currency
 }
 
-// ============================================================================
-// EXPORT
-// ============================================================================
-
-export default {
-  // Types are exported individually above
-};
-
 /**
  * Example Usage:
  *
- * import { CompanyInfo, FinancialData, SearchBarProps } from './COMPONENT_SPECS';
+ * import { CompanyInfo, FinancialData, SearchBarProps } from './types/financial';
  *
  * const MySearchBar: React.FC<SearchBarProps> = ({ onSearch, onSelect }) => {
  *   // Implementation

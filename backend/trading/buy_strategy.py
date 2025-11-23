@@ -1,6 +1,9 @@
 import anthropic
-from backend.config import Config
-from backend.api.kis_api import KISApi
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from config import Config
+from api.kis_api import KISApi
 
 
 class BuyStrategy:

@@ -5,7 +5,10 @@
 
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
-from backend.api.kis_api import KISApi
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from api.kis_api import KISApi
 
 
 # ==================== 매수 전략 베이스 ====================

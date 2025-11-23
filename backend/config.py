@@ -9,7 +9,12 @@ class Config:
     # Flask 설정
     SECRET_KEY = os.getenv('SECRET_KEY', 'your-secret-key-change-this')
 
-    # 한국투자증권 API 설정
+    # 키움증권 OpenAPI 설정 (메인)
+    KIWOOM_ACCOUNT_NO = os.getenv('KIWOOM_ACCOUNT_NO')  # 계좌번호
+    KIWOOM_USER_ID = os.getenv('KIWOOM_USER_ID')  # 사용자 ID (로그인용 - 옵션)
+    KIWOOM_USER_PW = os.getenv('KIWOOM_USER_PW')  # 사용자 비밀번호 (로그인용 - 옵션)
+
+    # 한국투자증권 API 설정 (백업용)
     KIS_APP_KEY = os.getenv('KIS_APP_KEY')
     KIS_APP_SECRET = os.getenv('KIS_APP_SECRET')
     KIS_ACCOUNT_NO = os.getenv('KIS_ACCOUNT_NO')
