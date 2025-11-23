@@ -4,22 +4,28 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from backend.config import get_config
 from backend.api.finnhub_client import get_finnhub_client
+from backend.api.kiwoom_client import get_kiwoom_client
 
 Config = get_config()
 
 
 class BuyStrategy:
-    """AI 기반 매수 판단 전략"""
+    """AI 기반 매수 판단 전략 (미국 주식: Finnhub, 한국 주식: Kiwoom)"""
 
     def __init__(self):
         self.client = anthropic.Anthropic(api_key=Config.ANTHROPIC_API_KEY) if hasattr(Config, 'ANTHROPIC_API_KEY') else None
         self.finnhub_client = get_finnhub_client()
+        self.kiwoom_client = get_kiwoom_client()
+
+    def _is_korean_stock(self, stock_code):
+        """한국 주식 여부 판단 (6자리 숫자면 한국 주식)"""
+        return len(stock_code) == 6 and stock_code.isdigit()
 
     def analyze_stock_for_buy(self, stock_code, stock_name, additional_info=None):
         """주식 매수 판단 분석
 
         Args:
-            stock_code: 종목 코드
+            stock_code: 종목 코드 (한국: 6자리 숫자, 미국: 알파벳)
             stock_name: 종목 명
             additional_info: 추가 정보 (뉴스, 재무제표 등)
 
@@ -32,27 +38,51 @@ class BuyStrategy:
                 "target_price": int
             }
         """
-        # 현재 주식 정보 조회 (Finnhub)
-        quote = self.finnhub_client.get_quote(stock_code)
+        # 한국 주식인지 미국 주식인지 판단
+        is_korean = self._is_korean_stock(stock_code)
 
-        if not quote or not quote.get('c'):
-            return {
-                "should_buy": False,
-                "confidence": 0.0,
-                "reason": "주식 정보를 가져올 수 없습니다.",
-                "recommended_quantity": 0,
-                "target_price": 0
+        # 현재 주식 정보 조회
+        if is_korean:
+            # 한국 주식: 키움 API 사용
+            quote_result = self.kiwoom_client.get_stock_price(stock_code)
+            if not quote_result.get('success'):
+                return {
+                    "should_buy": False,
+                    "confidence": 0.0,
+                    "reason": f"주식 정보를 가져올 수 없습니다: {quote_result.get('message')}",
+                    "recommended_quantity": 0,
+                    "target_price": 0
+                }
+            stock_info = {
+                'current_price': quote_result.get('current_price', 0),
+                'change_rate': quote_result.get('change_rate', 0),
+                'volume': quote_result.get('volume', 0),
+                'high_price': quote_result.get('high_price', 0),
+                'low_price': quote_result.get('low_price', 0),
+                'open_price': quote_result.get('open_price', 0),
             }
+        else:
+            # 미국 주식: Finnhub API 사용
+            quote = self.finnhub_client.get_quote(stock_code)
 
-        # Finnhub quote를 기존 형식으로 변환
-        stock_info = {
-            'current_price': quote.get('c', 0),  # Current price
-            'change_rate': ((quote.get('c', 0) - quote.get('pc', 0)) / quote.get('pc', 1)) * 100 if quote.get('pc') else 0,
-            'volume': quote.get('v', 0),  # Volume
-            'high_price': quote.get('h', 0),  # High
-            'low_price': quote.get('l', 0),  # Low
-            'open_price': quote.get('o', 0),  # Open
-        }
+            if not quote or not quote.get('c'):
+                return {
+                    "should_buy": False,
+                    "confidence": 0.0,
+                    "reason": "주식 정보를 가져올 수 없습니다.",
+                    "recommended_quantity": 0,
+                    "target_price": 0
+                }
+
+            # Finnhub quote를 기존 형식으로 변환
+            stock_info = {
+                'current_price': quote.get('c', 0),  # Current price
+                'change_rate': ((quote.get('c', 0) - quote.get('pc', 0)) / quote.get('pc', 1)) * 100 if quote.get('pc') else 0,
+                'volume': quote.get('v', 0),  # Volume
+                'high_price': quote.get('h', 0),  # High
+                'low_price': quote.get('l', 0),  # Low
+                'open_price': quote.get('o', 0),  # Open
+            }
 
         # 계좌 정보 조회 (기본값 사용 - 실제 거래 API 없음)
         balance_info = {

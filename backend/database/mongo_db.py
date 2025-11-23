@@ -100,6 +100,7 @@ class UserManager:
 
     def __init__(self):
         self.db = MongoDB()
+        self.users_collection = self.db.users
 
     @staticmethod
     def hash_password(password: str) -> str:
@@ -113,9 +114,16 @@ class UserManager:
         return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
 
     def create_user(self, username: str, password: str, email: Optional[str] = None,
-                    full_name: Optional[str] = None) -> Dict[str, Any]:
+                    full_name: Optional[str] = None, is_admin: bool = False) -> Dict[str, Any]:
         """
         Create a new user with hashed password
+
+        Args:
+            username: Username
+            password: Plain text password (will be hashed)
+            email: User email
+            full_name: User's full name
+            is_admin: Whether user has admin privileges
 
         Returns:
             User document with masked sensitive fields
@@ -131,7 +139,7 @@ class UserManager:
                 'created_at': datetime.utcnow(),
                 'updated_at': datetime.utcnow(),
                 'is_active': True,
-                'is_admin': False,
+                'is_admin': is_admin,
                 'last_login': None,
             }
 

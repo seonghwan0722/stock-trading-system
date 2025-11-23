@@ -549,7 +549,7 @@ python scripts/auto_commit.py -m "test: 자동 커밋 테스트"
 - B) unittest (Python 내장)
 - C) TDD 하지 않음 (나중에 결정)
 
-**선택**: _________
+**선택**: A) pytest (추천 ⭐)
 
 ---
 
@@ -559,7 +559,7 @@ python scripts/auto_commit.py -m "test: 자동 커밋 테스트"
 - B) 60%+ (보통)
 - C) 테스트 커버리지 신경 안 씀
 
-**선택**: _________
+**선택**: A) 80%+ (엄격)
 
 ---
 
@@ -569,7 +569,7 @@ python scripts/auto_commit.py -m "test: 자동 커밋 테스트"
 - B) 나중에 설정
 - C) 필요 없음
 
-**선택**: _________
+**선택**: GitHub Actions로 자동 테스트 설정
 
 ---
 
@@ -579,7 +579,7 @@ python scripts/auto_commit.py -m "test: 자동 커밋 테스트"
 - B) 사용자가 명시적으로 요청할 때만
 - C) Git Hook으로 파일 저장 시 자동 커밋
 
-**선택**: _________
+**선택**: 매번 Claude가 자동으로 커밋 + 푸시
 
 ---
 

@@ -33,6 +33,10 @@ class Config:
     MONGODB_URI = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/')
     MONGODB_DB_NAME = os.getenv('MONGODB_DB_NAME', 'stock_trading_db')
 
+    # Admin Account (for initial setup)
+    ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin')
+    ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', '')
+
     # Free API Keys
     # Finnhub: Real-time quotes, company financials, news (60 calls/min FREE)
     FINNHUB_API_KEY = os.getenv('FINNHUB_API_KEY', '')
@@ -42,6 +46,9 @@ class Config:
 
     # DART: Korean company financials (Unlimited FREE)
     DART_API_KEY = os.getenv('DART_API_KEY', '')
+
+    # Polygon.io: Real-time US stocks data (5 calls/min FREE)
+    POLYGON_API_KEY = os.getenv('POLYGON_API_KEY', '')
 
     # Telegram Configuration
     TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')
