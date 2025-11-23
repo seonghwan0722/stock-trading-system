@@ -1,8 +1,12 @@
 # 금융 데이터 API: 종합 비교 및 통합 전략
 
 **작성일**: 2025년 11월 21일
+**최종 업데이트**: 2025년 11월 23일
 **프로젝트**: 주식 시장 & 미국 의회 거래 데이터 수집
 **목적**: 웹 스크래핑의 대안/보완으로 API 문서화
+
+> ⚠️ **업데이트 (2025-11-23)**: IEX Cloud 서비스가 종료되어 더 이상 사용할 수 없습니다.
+> 현재 프로젝트는 **Finnhub**(실시간 시세 + 재무제표), **Alpha Vantage**(기술적 지표), **DART**(한국 기업 재무제표)를 사용합니다.
 
 ---
 
@@ -18,9 +22,9 @@
 ### 주요 발견사항
 
 1. **미국 의회 거래**: 공식 API 제한적; SEC EDGAR + 맞춤형 스크래핑 필요
-2. **주식 데이터**: 다양한 고품질 API 존재 (Polygon.io, Finnhub, IEX Cloud, Alpha Vantage)
+2. **주식 데이터**: 다양한 고품질 API 존재 (Polygon.io, Finnhub, Alpha Vantage)
 3. **내부자 거래**: SEC EDGAR가 구조화된 데이터 제공; 유료 API도 존재
-4. **비용 효율적 접근**: 무료/유료 API와 목표 스크래핑을 결합한 하이브리드 전략
+4. **비용 효율적 접근**: 무료 API(Finnhub, Alpha Vantage, DART)로 대부분의 기능 구현 가능
 
 ---
 
@@ -172,10 +176,13 @@
 
 ### 2.3 IEX Cloud
 
-**가용성 & 접근**: ✅ 무료 티어 + 유료
-- 웹사이트: https://iexcloud.io
-- API 키 필요
-- 넉넉한 무료 티어 ($0)
+> ⚠️ **서비스 종료 (2025)**: IEX Cloud는 더 이상 사용할 수 없습니다. 웹사이트가 종료되어 API 키를 발급받을 수 없습니다.
+> 대체 방안: **Finnhub**를 실시간 시세 및 재무제표 데이터의 주요 소스로 사용하세요.
+
+**가용성 & 접근**: ❌ 서비스 종료됨
+- 웹사이트: ~~https://iexcloud.io~~ (종료됨)
+- API 키 발급 불가
+- ~~넉넉한 무료 티어 ($0)~~
 
 **무료 티어**:
 - 월 100 메시지 무료
@@ -271,8 +278,8 @@
 | API | 무료 티어 | 유료 (기본) | 데이터 지연 | 실시간 가능 | 최적 용도 |
 |-----|-----------|-------------|-----------|------------|----------|
 | Polygon.io | 5회/분 | $29/월 | 15-20분 | 예 (Pro) | 주식 시세, 집계 |
-| Finnhub | 60회/분 | $75/월 | 15-20분 | 예 (Pro) | 재무제표, 실적 |
-| IEX Cloud | 100msg/월 | $0.01/msg | 없음 | 예 | 실시간 시세, 통계 |
+| Finnhub | 60회/분 | $75/월 | 15-20분 | 예 (Pro) | 재무제표, 실적, 실시간 시세 |
+| ~~IEX Cloud~~ | ~~100msg/월~~ | ~~$0.01/msg~~ | ~~없음~~ | ~~예~~ | ❌ 서비스 종료됨 |
 | Alpha Vantage | 5회/분 | $99.99/월 | 15-20분 | 예 (유료) | 기술적 지표 |
 | SEC EDGAR | 무제한 | 무료 | 실시간 | 예 | Form 4, 내부자 데이터 |
 
@@ -306,16 +313,18 @@
 └─────────────────────────────────────────┘
     ↓               ↓               ↓
 ┌─────────┐  ┌─────────┐  ┌─────────┐
-│IEX Cloud│  │ Finnhub │  │SEC EDGAR│
-│ (실시간) │  │(재무제표)│  │(내부자) │
+│ Finnhub │  │Alpha Vgn│  │SEC EDGAR│
+│(실시간+ │  │(기술지표)│  │(내부자) │
+│ 재무제표)│  │         │  │         │
 └─────────┘  └─────────┘  └─────────┘
 ```
 
 ### 구현 전략:
 
-#### Layer 1: 실시간 시세 (IEX Cloud)
+#### Layer 1: 실시간 시세 (Finnhub)
+- 무료 티어: 60 calls/min
 - 5-15분마다 업데이트
-- 비용: ~$70-100/월
+- 비용: 무료 (또는 Pro: $75/월)
 - 캐시: 5분 TTL
 
 #### Layer 2: 재무제표 (Finnhub)
@@ -347,9 +356,10 @@
 **월간 비용**:
 
 ```
-IEX Cloud (실시간 시세):
-  - 100 주식 × 1일 4회 확인 × 30일 = 12,000 호출
-  - 12,000 × $0.01 = $120/월
+Finnhub (실시간 시세):
+  - 무료 티어: 60 calls/min = 86,400 calls/day
+  - 100 주식 × 1일 4회 확인 × 30일 = 12,000 호출/월
+  - 비용: $0/월 (무료 티어 충분)
 
 Finnhub (재무제표 & 뉴스):
   - 100 주식 × 1일 1회 재무제표 확인 = 3,000/월 (무료 티어: 60회/분)
@@ -367,8 +377,8 @@ SEC EDGAR (내부자 거래):
   - 무제한 무료 접근
   - 비용: $0/월
 
-예상 월간 비용: $220/월 (IEX + Alpha Vantage)
-예상 연간 비용: $2,640
+예상 월간 비용: $0/월 (Finnhub 무료 + Alpha Vantage 무료)
+예상 연간 비용: $0 (무료 티어만 사용 시)
 
 대안 (모든 데이터에 Finnhub Pro 사용):
   - Finnhub Pro: $300/월
@@ -379,8 +389,8 @@ SEC EDGAR (내부자 거래):
 ### 비용 최적화:
 
 1. **무료 티어로 시작** (Finnhub 60회/분이면 100 주식 충분)
-2. **실시간 시세 필요 시 IEX Cloud 추가**
-3. **개발/지표에 무료 Alpha Vantage 사용**
+2. **기술적 지표에 무료 Alpha Vantage 사용** (5회/분, 500/일)
+3. **한국 기업 데이터에 DART API 사용** (무료, 무제한)
 4. **모든 내부자 거래에 SEC EDGAR** (무료)
 
 **최소 실행 가능 스택: $120-150/월**
@@ -389,21 +399,22 @@ SEC EDGAR (내부자 거래):
 
 ## 6. 각 사용 사례별 최고 API
 
-1. **실시간 시세**: IEX Cloud (진정한 실시간, 종량제)
+1. **실시간 시세**: Finnhub (60 calls/min 무료, 15-20분 지연)
 2. **재무제표**: Finnhub (무료 티어 우수, 데이터 깊이)
-3. **기술적 지표**: Alpha Vantage (30+ 지표) 또는 Finnhub
-4. **내부자 거래**: SEC EDGAR (무료) + Capitol Trades 스크래핑
-5. **기업 뉴스**: Finnhub (무료 티어 포함)
-6. **차트 데이터**: Polygon.io 또는 Finnhub (집계)
+3. **기술적 지표**: Alpha Vantage (30+ 지표, 5 calls/min 무료)
+4. **한국 기업 재무**: DART API (무료, 무제한)
+5. **내부자 거래**: SEC EDGAR (무료) + Capitol Trades 스크래핑
+6. **기업 뉴스**: Finnhub (무료 티어 포함)
+7. **차트 데이터**: Polygon.io 또는 Finnhub (집계)
 
 ---
 
 ## 7. 비용 효율적 프로덕션 스택
 
 ```
-Tier 1 (MVP): Finnhub 무료 + SEC EDGAR = $0/월
-Tier 2 (성장): + IEX Cloud = $100-150/월
-Tier 3 (프리미엄): + Alpha Vantage Pro = $200-250/월
+Tier 1 (MVP): Finnhub 무료 + Alpha Vantage 무료 + DART 무료 + SEC EDGAR = $0/월
+Tier 2 (성장): + Finnhub Pro = $75/월
+Tier 3 (프리미엄): + Alpha Vantage Pro = $175/월
 ```
 
 ---
@@ -435,10 +446,11 @@ Tier 3 (프리미엄): + Alpha Vantage Pro = $200-250/월
 ### 비용 효율적 프로덕션 스택:
 
 **100개 주식 추적 앱:**
-- Finnhub (무료): 재무제표, 뉴스, 기본 시세
-- IEX Cloud ($120/월): 실시간 시세
+- Finnhub (무료): 재무제표, 뉴스, 실시간 시세 (60 calls/min)
+- Alpha Vantage (무료): 기술적 지표 (5 calls/min, 500/day)
+- DART API (무료): 한국 기업 재무제표
 - SEC EDGAR (무료): 내부자 거래
-- **총 비용: $120-150/월**
+- **총 비용: $0/월 (모두 무료 티어)**
 
 **더 많은 기능이 필요한 경우:**
 - + Alpha Vantage Pro ($100/월): 30+ 기술적 지표
@@ -450,8 +462,8 @@ Tier 3 (프리미엄): + Alpha Vantage Pro = $200-250/월
 
 1. **무료 API 키 등록**:
    - Finnhub: https://finnhub.io/register
-   - IEX Cloud: https://iexcloud.io/console/
-   - Alpha Vantage: https://www.alphavantage.co/
+   - Alpha Vantage: https://www.alphavantage.co/support/#api-key
+   - DART: https://opendart.fss.or.kr/
 
 2. **API 통합 테스트**:
    - 무료 티어로 시작

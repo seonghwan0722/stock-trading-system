@@ -2,16 +2,18 @@ import anthropic
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import Config
-from api.kis_api import KISApi
+from backend.config import get_config
+from backend.api.finnhub_client import get_finnhub_client
+
+Config = get_config()
 
 
 class SellStrategy:
     """AI 기반 매도 판단 전략"""
 
     def __init__(self):
-        self.client = anthropic.Anthropic(api_key=Config.ANTHROPIC_API_KEY)
-        self.kis_api = KISApi()
+        self.client = anthropic.Anthropic(api_key=Config.ANTHROPIC_API_KEY) if hasattr(Config, 'ANTHROPIC_API_KEY') else None
+        self.finnhub_client = get_finnhub_client()
 
     def analyze_stock_for_sell(self, position, additional_info=None):
         """주식 매도 판단 분석
@@ -38,10 +40,10 @@ class SellStrategy:
                 "urgency": str  # "high", "medium", "low"
             }
         """
-        # 현재 주식 정보 조회
-        stock_info = self.kis_api.get_current_price(position['stock_code'])
+        # 현재 주식 정보 조회 (Finnhub)
+        quote = self.finnhub_client.get_quote(position['stock_code'])
 
-        if not stock_info:
+        if not quote or not quote.get('c'):
             return {
                 "should_sell": False,
                 "confidence": 0.0,
@@ -198,9 +200,16 @@ class SellStrategy:
         }
 
     def execute_sell(self, stock_code, quantity):
-        """매도 실행"""
-        result = self.kis_api.sell_stock(stock_code, quantity, price=0)
-        return result
+        """매도 실행 (시뮬레이션)"""
+        # 실제 거래 API가 없으므로 시뮬레이션 결과 반환
+        quote = self.finnhub_client.get_quote(stock_code)
+        return {
+            'success': True,
+            'message': '매도 주문이 시뮬레이션되었습니다 (실제 거래 아님)',
+            'stock_code': stock_code,
+            'quantity': quantity,
+            'price': quote.get('c', 0) if quote else 0
+        }
 
     def check_stop_loss(self, position, stop_loss_rate=-7.0):
         """손절 체크

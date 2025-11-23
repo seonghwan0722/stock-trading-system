@@ -23,7 +23,8 @@ sys.path.insert(0, str(backend_root))
 # .env 파일 로드
 load_dotenv(project_root / '.env')
 
-from database.stock_db import StockDatabase
+from backend.database.mongo_db import get_database
+from backend.config import get_config
 
 logging.basicConfig(
     level=logging.INFO,
@@ -33,13 +34,14 @@ logger = logging.getLogger(__name__)
 
 
 class DARTCompanyCollector:
-    """DART 상장 종목 수집 클래스"""
+    """DART 상장 종목 수집 클래스 - MongoDB 버전"""
 
     CORP_CODE_URL = "https://opendart.fss.or.kr/api/corpCode.xml"
 
     def __init__(self, api_key: str):
         self.api_key = api_key
-        self.db = StockDatabase()
+        self.db = get_database()
+        self.dart_companies = self.db.dart_companies if self.db else None
 
     def download_corp_codes(self, output_path: str = "data/corpcode.zip") -> str:
         logger.info("Downloading corporate codes from DART...")
@@ -108,22 +110,36 @@ class DARTCompanyCollector:
         return companies
 
     def save_to_database(self, companies: List[Dict]) -> int:
-        logger.info("Saving to database...")
+        """MongoDB에 종목 데이터 저장"""
+        if not self.dart_companies:
+            logger.error("MongoDB connection not available")
+            return 0
 
+        logger.info("Saving to MongoDB...")
+
+        # Clear existing data
+        self.dart_companies.delete_many({})
+
+        # Prepare documents
         stocks = []
         for company in companies:
             stocks.append({
                 'stock_code': company['stock_code'],
                 'corp_code': company['corp_code'],
-                'company_name': company['corp_name'],
-                'company_name_en': None,
+                'name': company['corp_name'],
+                'name_en': None,
                 'market_type': company['market_type'],
                 'modify_date': company['modify_date']
             })
 
-        count = self.db.bulk_insert_stocks(stocks)
-        logger.info(f"Saved {count} stocks to database")
-        return count
+        # Bulk insert
+        if stocks:
+            result = self.dart_companies.insert_many(stocks)
+            count = len(result.inserted_ids)
+            logger.info(f"✅ Saved {count} stocks to MongoDB")
+            return count
+
+        return 0
 
     def run(self) -> int:
         try:

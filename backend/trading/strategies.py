@@ -8,7 +8,7 @@ from typing import Dict, Any, Optional
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from api.kis_api import KISApi
+from backend.api.finnhub_client import get_finnhub_client
 
 
 # ==================== 매수 전략 베이스 ====================
@@ -18,7 +18,7 @@ class BuyStrategyBase(ABC):
 
     def __init__(self, params: Dict[str, Any] = None):
         self.params = params or {}
-        self.kis_api = KISApi()
+        self.finnhub_client = get_finnhub_client()
 
     @abstractmethod
     def should_buy(self, stock_info: Dict, balance_info: Dict, additional_info: Dict = None) -> Dict:
@@ -54,7 +54,7 @@ class SellStrategyBase(ABC):
 
     def __init__(self, params: Dict[str, Any] = None):
         self.params = params or {}
-        self.kis_api = KISApi()
+        self.finnhub_client = get_finnhub_client()
 
     @abstractmethod
     def should_sell(self, position: Dict, stock_info: Dict, additional_info: Dict = None) -> Dict:

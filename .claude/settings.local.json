@@ -40,7 +40,15 @@
       "Bash(tests/unit/__init__.py)",
       "Bash(tests/integration/__init__.py)",
       "Bash(tests/__init__.py)",
-      "Bash(tests/conftest.py)"
+      "Bash(tests/conftest.py)",
+      "Bash(if [ -f \"backend/api/kiwoom_api.py\" ])",
+      "Bash(then cp backend/api/kiwoom_api.py backup_old_apis/)",
+      "Bash(if [ -f \"backend/api/kis_api.py\" ])",
+      "Bash(then cp backend/api/kis_api.py backup_old_apis/)",
+      "Bash(if [ -f \"backend/database/stock_db.py\" ])",
+      "Bash(then cp backend/database/stock_db.py backup_old_apis/)",
+      "Bash(C:UsersjasanAppDataLocalProgramsPythonPython312python.exe -m pip install flask-limiter flask-talisman marshmallow pymongo bcrypt cryptography finnhub-python alpha-vantage)",
+      "Bash(timeout 5 sleep:*)"
     ],
     "deny": [],
     "ask": []

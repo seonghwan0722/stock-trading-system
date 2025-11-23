@@ -49,11 +49,13 @@ async function login() {
         return;
     }
 
-    const result = await apiRequest('/api/auth/login', 'POST', { username, password });
+    const result = await apiRequest('/api/user/login', 'POST', { username, password });
 
     if (result && result.success) {
-        authToken = result.token;
+        authToken = result.access_token;
         localStorage.setItem('authToken', authToken);
+        localStorage.setItem('refresh_token', result.refresh_token);
+        localStorage.setItem('username', username);
 
         // 메인 페이지로 이동
         document.getElementById('loginPage').classList.remove('active');
@@ -62,7 +64,7 @@ async function login() {
         // 대시보드 로드
         loadDashboard();
     } else {
-        document.getElementById('loginError').textContent = result?.message || '로그인 실패';
+        document.getElementById('loginError').textContent = result?.error || '로그인 실패';
     }
 }
 

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사용자 설정 - 주식 자동매매 시스템</title>
+    <link rel="stylesheet" href="src/styles/main.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Navigation Bar */
+        .navbar {
+            background: white;
+            border-radius: 10px;
+            padding: 15px 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .logout-btn:hover {
+            background: #c82333;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Auth Forms */
+        .auth-container {
+            max-width: 450px;
+            margin: 100px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .auth-container h1 {
+            color: #667eea;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+
+        .toggle-auth {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+        }
+
+        .toggle-auth a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        /* Settings Panel */
+        .settings-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .settings-panel.active {
+            display: block;
+        }
+
+        .settings-panel h2 {
+            color: #667eea;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .setting-section {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .setting-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+        }
+
+        .alert {
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .password-requirements {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .password-requirements li {
+            margin-left: 20px;
+        }
+
+        /* Loading Spinner */
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation (Hidden when not logged in) -->
+    <nav class="navbar" id="navbar" style="display: none;">
+        <div>
+            <h3 style="color: #667eea;">📈 주식 자동매매</h3>
+        </div>
+        <ul class="nav-links">
+            <li><a href="index.html">홈</a></li>
+            <li><a href="dart_analysis.html">DART 분석</a></li>
+            <li><a href="strategy-config.html">전략 설정</a></li>
+            <li><a href="user_settings.html" class="active">사용자 설정</a></li>
+        </ul>
+        <div class="user-info">
+            <span id="username-display"></span>
+            <button class="logout-btn" onclick="logout()">로그아웃</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Alert Messages -->
+        <div id="alert" class="alert"></div>
+
+        <!-- Login/Register Form -->
+        <div class="auth-container" id="auth-container">
+            <h1 id="auth-title">로그인</h1>
+
+            <!-- Login Form -->
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login-username">사용자명</label>
+                    <input type="text" id="login-username" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">비밀번호</label>
+                    <input type="password" id="login-password" required>
+                </div>
+                <button type="submit" class="btn-primary">로그인</button>
+                <div class="toggle-auth">
+                    계정이 없으신가요? <a href="#" onclick="toggleAuthMode(); return false;">회원가입</a>
+                </div>
+            </form>
+
+            <!-- Register Form -->
+            <form id="register-form" style="display: none;">
+                <div class="form-group">
+                    <label for="reg-username">사용자명</label>
+                    <input type="text" id="reg-username" required>
+                </div>
+                <div class="form-group">
+                    <label for="reg-email">이메일 (선택사항)</label>
+                    <input type="email" id="reg-email">
+                </div>
+                <div class="form-group">
+                    <label for="reg-fullname">이름 (선택사항)</label>
+                    <input type="text" id="reg-fullname">
+                </div>
+                <div class="form-group">
+                    <label for="reg-password">비밀번호</label>
+                    <input type="password" id="reg-password" required>
+                    <ul class="password-requirements">
+                        <li>최소 8자 이상</li>
+                        <li>대문자, 소문자, 숫자 포함</li>
+                    </ul>
+                </div>
+                <div class="form-group">
+                    <label for="reg-password-confirm">비밀번호 확인</label>
+                    <input type="password" id="reg-password-confirm" required>
+                </div>
+                <button type="submit" class="btn-primary">회원가입</button>
+                <div class="toggle-auth">
+                    이미 계정이 있으신가요? <a href="#" onclick="toggleAuthMode(); return false;">로그인</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Settings Panel (Hidden until logged in) -->
+        <div class="settings-panel" id="settings-panel">
+            <h2>⚙️ 사용자 설정</h2>
+
+            <form id="settings-form">
+                <div class="settings-grid">
+                    <!-- Investment Profile -->
+                    <div class="setting-section">
+                        <h3>📊 투자 성향</h3>
+                        <div class="form-group">
+                            <label for="investment-style">투자 스타일</label>
+                            <select id="investment-style">
+                                <option value="">선택하세요</option>
+                                <option value="conservative">보수적</option>
+                                <option value="moderate">중도적</option>
+                                <option value="aggressive">공격적</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="risk-tolerance">위험 허용도 (1-10)</label>
+                            <input type="number" id="risk-tolerance" min="1" max="10">
+                        </div>
+                    </div>
+
+                    <!-- Trading Limits -->
+                    <div class="setting-section">
+                        <h3>💰 거래 한도</h3>
+                        <div class="form-group">
+                            <label for="max-position-size">최대 포지션 크기 (원)</label>
+                            <input type="number" id="max-position-size" min="0" step="100000">
+                        </div>
+                        <div class="form-group">
+                            <label for="max-positions">최대 보유 종목 수</label>
+                            <input type="number" id="max-positions" min="1" max="50">
+                        </div>
+                    </div>
+
+                    <!-- Telegram Settings -->
+                    <div class="setting-section">
+                        <h3>📱 텔레그램 설정</h3>
+                        <div class="form-group">
+                            <label for="telegram-bot-token">Bot Token</label>
+                            <input type="password" id="telegram-bot-token" placeholder="현재 값 숨김">
+                        </div>
+                        <div class="form-group">
+                            <label for="telegram-chat-id">Chat ID</label>
+                            <input type="text" id="telegram-chat-id" placeholder="현재 값 숨김">
+                        </div>
+                    </div>
+
+                    <!-- Notification Settings -->
+                    <div class="setting-section">
+                        <h3>🔔 알림 설정</h3>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="enable-telegram-notifications">
+                            <label for="enable-telegram-notifications">텔레그램 알림 활성화</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="enable-trade-alerts">
+                            <label for="enable-trade-alerts">매매 알림</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="enable-monthly-reports">
+                            <label for="enable-monthly-reports">월간 리포트</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 30px; text-align: right;">
+                    <button type="submit" class="btn-primary" style="width: auto; padding: 12px 40px;">
+                        💾 설정 저장
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="src/utils/user_settings.js"></script>
+</body>
+</html>

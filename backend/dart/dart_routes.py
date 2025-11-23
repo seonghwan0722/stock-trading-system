@@ -12,21 +12,33 @@ import logging
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from auth import token_required
-from dart.dart_api_client import DartAPIClient, FinancialDataAnalyzer
-from database.stock_db import StockDatabase
+from backend.auth import token_required
+from backend.dart.dart_api_client import DartAPIClient, FinancialDataAnalyzer
+from backend.database.mongo_db import get_database
+from backend.config import get_config
 
 logger = logging.getLogger(__name__)
+
+# Get configuration
+config = get_config()
 
 # Blueprint 생성
 dart_bp = Blueprint('dart', __name__, url_prefix='/api/dart')
 
 # DART API 클라이언트 초기화
-DART_API_KEY = os.getenv('DART_API_KEY', '')
+DART_API_KEY = config.DART_API_KEY
 dart_client = DartAPIClient(api_key=DART_API_KEY) if DART_API_KEY else None
 
-# 종목 DB 초기화
-stock_db = StockDatabase()
+# MongoDB 초기화
+db = None
+try:
+    db = get_database()
+    logger.info('✅ DART routes: MongoDB initialized')
+except Exception as e:
+    logger.error(f'❌ DART routes: MongoDB initialization failed: {e}')
+
+# Companies collection
+dart_companies = db.dart_companies if db else None
 
 
 # ==================== 종목 검색 API ====================
@@ -47,21 +59,35 @@ def get_all_stocks():
             "market_stats": {"KOSPI": 800, "KOSDAQ": 400}
         }
     """
+    if not dart_companies:
+        return jsonify({'success': False, 'error': 'Database not available'}), 503
+
     try:
         market_type = request.args.get('market')
-        stocks = stock_db.get_all_stocks(market_type=market_type)
-        market_stats = stock_db.get_market_stats()
+
+        # Query MongoDB
+        query = {}
+        if market_type:
+            query['market_type'] = market_type
+
+        stocks = list(dart_companies.find(query, {'_id': 0}).limit(5000))
+
+        # Calculate market stats
+        market_stats = {}
+        for market in ['KOSPI', 'KOSDAQ', 'KONEX']:
+            count = dart_companies.count_documents({'market_type': market})
+            if count > 0:
+                market_stats[market] = count
 
         return jsonify({
             'success': True,
             'data': stocks,
             'count': len(stocks),
-            'market_stats': market_stats,
-            'last_update': stock_db.get_last_update()
+            'market_stats': market_stats
         })
 
     except Exception as e:
-        logger.error(f"Get all stocks error: {e}")
+        logger.error(f"Get all stocks error: {e}", exc_info=True)
         return jsonify({
             'success': False,
             'message': f'종목 조회 실패: {str(e)}'
@@ -85,6 +111,9 @@ def search_stocks():
             "query": "삼성"
         }
     """
+    if not dart_companies:
+        return jsonify({'success': False, 'error': 'Database not available'}), 503
+
     try:
         query = request.args.get('q', '').strip()
         limit = int(request.args.get('limit', 20))
@@ -96,7 +125,16 @@ def search_stocks():
                 'data': []
             }), 400
 
-        results = stock_db.search_stocks(query, limit=min(limit, 100))
+        # MongoDB regex search
+        search_query = {
+            '$or': [
+                {'name': {'$regex': query, '$options': 'i'}},
+                {'stock_code': {'$regex': query}},
+                {'corp_code': {'$regex': query}}
+            ]
+        }
+
+        results = list(dart_companies.find(search_query, {'_id': 0}).limit(min(limit, 100)))
 
         return jsonify({
             'success': True,
@@ -129,7 +167,7 @@ def get_stock_by_code(stock_code: str):
         }
     """
     try:
-        stock = stock_db.get_stock_by_code(stock_code)
+        stock = dart_companies.find_one({'stock_code': stock_code})
 
         if not stock:
             return jsonify({
@@ -451,9 +489,9 @@ def get_dart_status():
         status = {
             'api_configured': dart_client is not None,
             'database_ready': True,
-            'stock_count': stock_db.get_stock_count(),
-            'last_update': stock_db.get_last_update(),
-            'market_stats': stock_db.get_market_stats()
+            'stock_count': dart_companies.count_documents({}),
+            'last_update': 'N/A',  # MongoDB doesn't track this automatically
+            'market_stats': {'kospi': 0, 'kosdaq': 0}  # Simplified
         }
 
         if dart_client:
@@ -508,18 +546,18 @@ def format_financial_data(financial_data: Dict) -> Dict:
 
 def initialize_dart_module():
     """DART 모듈 초기화 함수 (앱 시작 시 호출)"""
-    global dart_client, stock_db
+    global dart_client
 
     # API 키 확인
     if not DART_API_KEY:
         logger.warning("DART_API_KEY not configured")
 
-    # DB 연결 확인
+    # MongoDB 연결 확인
     try:
-        count = stock_db.get_stock_count()
-        logger.info(f"Stock database ready with {count} stocks")
+        count = dart_companies.count_documents({})
+        logger.info(f"DART companies database ready with {count} companies")
     except Exception as e:
-        logger.error(f"Stock database initialization error: {e}")
+        logger.error(f"DART companies database initialization error: {e}")
 
 
 # Blueprint에 초기화 함수 추가

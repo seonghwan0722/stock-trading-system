@@ -25,6 +25,9 @@
                 <input type="password" id="password" placeholder="비밀번호" autocomplete="current-password">
                 <button onclick="login()">로그인</button>
                 <div id="loginError" class="error-message"></div>
+                <div style="text-align: center; margin-top: 15px;">
+                    <p style="color: #666;">계정이 없으신가요? <a href="user_settings.html" style="color: #667eea; text-decoration: none; font-weight: 600;">회원가입</a></p>
+                </div>
             </div>
         </div>
     </div>
@@ -34,12 +37,15 @@
         <nav class="navbar">
             <h1>🤖 AI 주식 자동매매</h1>
             <div class="nav-buttons">
-                <button onclick="showTab('dashboard')">대시보드</button>
+                <button onclick="showTab('dashboard')" class="active">대시보드</button>
                 <button onclick="showTab('trading')">매매</button>
                 <button onclick="showTab('recommendations')">추천 종목</button>
                 <button onclick="showTab('strategy')">전략 설정</button>
                 <button onclick="showTab('news')">뉴스</button>
                 <button onclick="showTab('other')">기타</button>
+                <a href="dart_analysis.html" class="nav-link-btn">📊 DART 분석</a>
+                <a href="strategy-config.html" class="nav-link-btn">⚙️ 전략 설정</a>
+                <a href="user_settings.html" class="nav-link-btn">👤 사용자 설정</a>
                 <button onclick="logout()">로그아웃</button>
             </div>
         </nav>

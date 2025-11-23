@@ -1,41 +1,127 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_talisman import Talisman
 import schedule
 import threading
 import time
 from datetime import datetime
 import sys
 import os
+import logging
+from logging.handlers import RotatingFileHandler
 
 # Add backend directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from config import Config
-from auth import AuthManager, token_required
-from api.kis_api import KISApi
-from trading.buy_strategy import BuyStrategy
-from trading.sell_strategy import SellStrategy
-from news.news_summary import NewsSummarizer
-from telegram_notifier.bot import TelegramNotifier, get_telegram_notifier
-from trading.strategy_manager import get_strategy_manager
-from scraper.capitol_trades_scraper import CapitolTradesScraper
-from scraper.stocknear_scraper import scrape_stocknear_sync
-from scraper.stock_analysis_scraper import StockAnalysisScraper
-from scraper.chart_exchange_scraper import ChartExchangeScraper
-from dart.dart_routes import dart_bp, initialize_dart_module
+# New imports - MongoDB and Free APIs
+from backend.config import get_config
+from backend.auth import token_required, get_auth_manager
+from backend.database.mongo_db import get_database, get_user_manager, get_trading_manager
+from backend.api.finnhub_client import get_finnhub_client
+from backend.api.alphavantage_client import get_alphavantage_client
+from backend.routes.user_routes import user_bp
 
+# Existing imports
+from backend.trading.buy_strategy import BuyStrategy
+from backend.trading.sell_strategy import SellStrategy
+from backend.news.news_summary import NewsSummarizer
+from backend.telegram_notifier.bot import TelegramNotifier, get_telegram_notifier
+from backend.trading.strategy_manager import get_strategy_manager
+from backend.scraper.capitol_trades_scraper import CapitolTradesScraper
+from backend.scraper.stocknear_scraper import scrape_stocknear_sync
+from backend.scraper.stock_analysis_scraper import StockAnalysisScraper
+from backend.scraper.chart_exchange_scraper import ChartExchangeScraper
+from backend.dart.dart_routes import dart_bp, initialize_dart_module
+
+# Initialize configuration
+config = get_config()
+
+# Initialize Flask app
 app = Flask(__name__, static_folder='../frontend')
-CORS(app)
+app.config['SECRET_KEY'] = config.SECRET_KEY
+app.config['MAX_CONTENT_LENGTH'] = config.MAX_CONTENT_LENGTH
 
-# Register DART Blueprint
+# Security: CORS with whitelist
+CORS(app, resources={
+    r"/api/*": {
+        "origins": config.CORS_ORIGINS,
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"],
+        "max_age": 3600
+    }
+})
+
+# Security: Rate Limiting
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=[config.RATELIMIT_DEFAULT],
+    storage_uri=config.RATELIMIT_STORAGE_URL,
+    enabled=config.RATELIMIT_ENABLED
+)
+
+# Security: HTTPS enforcement and headers (only in production)
+if config.ENVIRONMENT == 'production':
+    Talisman(app, force_https=True, strict_transport_security=True)
+
+# Security: Add security headers
+@app.after_request
+def add_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    return response
+
+# Logging setup
+if not os.path.exists('logs'):
+    os.makedirs('logs')
+
+file_handler = RotatingFileHandler(
+    config.LOG_FILE,
+    maxBytes=10240000,  # 10MB
+    backupCount=10
+)
+file_handler.setFormatter(logging.Formatter(
+    '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+))
+file_handler.setLevel(logging.INFO)
+
+app.logger.addHandler(file_handler)
+app.logger.setLevel(logging.INFO)
+app.logger.info(f'Stock Trading System startup - Environment: {config.ENVIRONMENT}')
+
+# Register Blueprints
 app.register_blueprint(dart_bp)
+app.register_blueprint(user_bp)  # NEW: User management routes
 
 # Initialize DART module (Flask 3.0+ compatibility)
 with app.app_context():
     initialize_dart_module()
 
-# 서비스 인스턴스 초기화
-kis_api = KISApi()
+# Initialize services
+try:
+    # New MongoDB-based services
+    db = get_database()
+    user_manager = get_user_manager()
+    trading_manager = get_trading_manager()
+    auth_manager = get_auth_manager()
+
+    # New Free API clients
+    finnhub_client = get_finnhub_client()
+    alphavantage_client = get_alphavantage_client()
+
+    app.logger.info('✅ MongoDB and Free API clients initialized')
+except Exception as e:
+    app.logger.error(f'❌ Failed to initialize MongoDB/APIs: {e}')
+    # Continue without MongoDB for now (degraded mode)
+    db = None
+    finnhub_client = None
+    alphavantage_client = None
+
+# Existing services
 buy_strategy = BuyStrategy()
 sell_strategy = SellStrategy()
 news_summarizer = NewsSummarizer()
@@ -43,20 +129,29 @@ telegram_notifier = TelegramNotifier()
 strategy_manager = get_strategy_manager()
 
 
-# ==================== 인증 API ====================
+# ==================== 인증 API (DEPRECATED - Use /api/user/login) ====================
 
 @app.route('/api/auth/login', methods=['POST'])
+@limiter.limit("5 per minute")  # Rate limiting for brute force protection
 def login():
-    """로그인"""
+    """
+    DEPRECATED: Use /api/user/login instead
+    Legacy login endpoint for backwards compatibility
+    """
+    app.logger.warning('Legacy /api/auth/login endpoint used. Migrate to /api/user/login')
+
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
 
-    if AuthManager.authenticate(username, password):
-        token = AuthManager.generate_token(username)
+    # Use new auth manager
+    result = auth_manager.authenticate(username, password) if auth_manager else None
+
+    if result and result.get('success'):
         return jsonify({
             'success': True,
-            'token': token,
+            'token': result.get('access_token'),
+            'refresh_token': result.get('refresh_token'),
             'message': '로그인 성공'
         })
     else:
@@ -66,41 +161,90 @@ def login():
         }), 401
 
 
-# ==================== 계좌 정보 API ====================
+# ==================== 계좌 정보 API (MongoDB) ====================
 
 @app.route('/api/account/balance', methods=['GET'])
 @token_required
-def get_balance():
-    """계좌 잔고 조회"""
-    result = kis_api.get_balance()
-    return jsonify(result)
+def get_balance(current_user):
+    """계좌 잔고 조회 - MongoDB에서 포트폴리오 조회"""
+    if not trading_manager:
+        return jsonify({'success': False, 'error': 'Database not available'}), 503
+
+    try:
+        portfolio = trading_manager.get_portfolio(current_user['user_id'])
+
+        total_value = 0
+        for position in portfolio:
+            # Get current price from Finnhub
+            if finnhub_client:
+                quote = finnhub_client.get_quote(position['stock_code'])
+                current_price = quote.get('c', position['avg_price'])
+                position['current_price'] = current_price
+                position['profit_loss'] = (current_price - position['avg_price']) * position['quantity']
+                total_value += current_price * position['quantity']
+
+        return jsonify({
+            'success': True,
+            'total_value': total_value,
+            'positions': portfolio
+        })
+
+    except Exception as e:
+        app.logger.error(f'Error getting balance: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': 'Failed to retrieve balance'}), 500
 
 
 @app.route('/api/account/positions', methods=['GET'])
 @token_required
-def get_positions():
+def get_positions(current_user):
     """보유 종목 조회"""
-    result = kis_api.get_balance()
-    if result.get('success'):
+    if not trading_manager:
+        return jsonify({'success': False, 'error': 'Database not available'}), 503
+
+    try:
+        portfolio = trading_manager.get_portfolio(current_user['user_id'])
+
         return jsonify({
             'success': True,
-            'positions': result.get('positions', [])
+            'positions': portfolio
         })
-    else:
-        return jsonify(result)
+
+    except Exception as e:
+        app.logger.error(f'Error getting positions: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': 'Failed to retrieve positions'}), 500
 
 
-# ==================== 주식 정보 API ====================
+# ==================== 주식 정보 API (Finnhub) ====================
 
 @app.route('/api/stock/price/<stock_code>', methods=['GET'])
 @token_required
-def get_stock_price(stock_code):
-    """주식 현재가 조회"""
-    result = kis_api.get_current_price(stock_code)
-    if result:
-        return jsonify({'success': True, 'data': result})
-    else:
-        return jsonify({'success': False, 'message': '종목 정보를 가져올 수 없습니다.'})
+def get_stock_price(stock_code, current_user):
+    """주식 현재가 조회 - Finnhub API 사용"""
+    if not finnhub_client:
+        return jsonify({'success': False, 'error': 'Stock API not available'}), 503
+
+    try:
+        # Get quote from Finnhub
+        quote = finnhub_client.get_quote(stock_code)
+
+        if quote and not quote.get('error'):
+            return jsonify({
+                'success': True,
+                'data': {
+                    'current_price': quote.get('c'),
+                    'high': quote.get('h'),
+                    'low': quote.get('l'),
+                    'open': quote.get('o'),
+                    'previous_close': quote.get('pc'),
+                    'timestamp': quote.get('t')
+                }
+            })
+        else:
+            return jsonify({'success': False, 'message': '종목 정보를 가져올 수 없습니다.'})
+
+    except Exception as e:
+        app.logger.error(f'Error getting stock price: {e}', exc_info=True)
+        return jsonify({'success': False, 'error': 'Failed to retrieve stock price'}), 500
 
 
 @app.route('/api/stock/detail/<stock_code>', methods=['GET'])

@@ -9,7 +9,9 @@ from typing import Dict, Optional
 import json
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import Config
+from backend.config import get_config
+
+Config = get_config()
 
 
 class TelegramNotifier:

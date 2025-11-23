@@ -5,14 +5,17 @@ from datetime import datetime
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import Config
+from backend.config import get_config
+
+Config = get_config()
 
 
 class NewsSummarizer:
     """경제 뉴스 크롤링 및 AI 요약"""
 
     def __init__(self):
-        self.client = anthropic.Anthropic(api_key=Config.ANTHROPIC_API_KEY)
+        # Anthropic API는 선택사항 - 없으면 요약 기능 비활성화
+        self.client = anthropic.Anthropic(api_key=Config.ANTHROPIC_API_KEY) if hasattr(Config, 'ANTHROPIC_API_KEY') and Config.ANTHROPIC_API_KEY else None
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }

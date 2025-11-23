@@ -2,16 +2,18 @@ import anthropic
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import Config
-from api.kis_api import KISApi
+from backend.config import get_config
+from backend.api.finnhub_client import get_finnhub_client
+
+Config = get_config()
 
 
 class BuyStrategy:
     """AI 기반 매수 판단 전략"""
 
     def __init__(self):
-        self.client = anthropic.Anthropic(api_key=Config.ANTHROPIC_API_KEY)
-        self.kis_api = KISApi()
+        self.client = anthropic.Anthropic(api_key=Config.ANTHROPIC_API_KEY) if hasattr(Config, 'ANTHROPIC_API_KEY') else None
+        self.finnhub_client = get_finnhub_client()
 
     def analyze_stock_for_buy(self, stock_code, stock_name, additional_info=None):
         """주식 매수 판단 분석
@@ -30,10 +32,10 @@ class BuyStrategy:
                 "target_price": int
             }
         """
-        # 현재 주식 정보 조회
-        stock_info = self.kis_api.get_current_price(stock_code)
+        # 현재 주식 정보 조회 (Finnhub)
+        quote = self.finnhub_client.get_quote(stock_code)
 
-        if not stock_info:
+        if not quote or not quote.get('c'):
             return {
                 "should_buy": False,
                 "confidence": 0.0,
@@ -42,8 +44,21 @@ class BuyStrategy:
                 "target_price": 0
             }
 
-        # 계좌 정보 조회
-        balance_info = self.kis_api.get_balance()
+        # Finnhub quote를 기존 형식으로 변환
+        stock_info = {
+            'current_price': quote.get('c', 0),  # Current price
+            'change_rate': ((quote.get('c', 0) - quote.get('pc', 0)) / quote.get('pc', 1)) * 100 if quote.get('pc') else 0,
+            'volume': quote.get('v', 0),  # Volume
+            'high_price': quote.get('h', 0),  # High
+            'low_price': quote.get('l', 0),  # Low
+            'open_price': quote.get('o', 0),  # Open
+        }
+
+        # 계좌 정보 조회 (기본값 사용 - 실제 거래 API 없음)
+        balance_info = {
+            'cash_balance': 10000000,  # 1천만원 가정
+            'positions': []
+        }
 
         # AI에게 분석 요청
         analysis_prompt = self._create_analysis_prompt(
@@ -184,6 +199,13 @@ class BuyStrategy:
         }
 
     def execute_buy(self, stock_code, quantity):
-        """매수 실행"""
-        result = self.kis_api.buy_stock(stock_code, quantity, price=0)
-        return result
+        """매수 실행 (시뮬레이션)"""
+        # 실제 거래 API가 없으므로 시뮬레이션 결과 반환
+        quote = self.finnhub_client.get_quote(stock_code)
+        return {
+            'success': True,
+            'message': '매수 주문이 시뮬레이션되었습니다 (실제 거래 아님)',
+            'stock_code': stock_code,
+            'quantity': quantity,
+            'price': quote.get('c', 0) if quote else 0
+        }

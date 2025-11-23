@@ -144,7 +144,7 @@ cat .env
 echo "DART_API_KEY=your_key_here" >> .env
 ```
 
----
+--- 
 
 ### ❌ "No module named 'flask'"
 
@@ -296,8 +296,6 @@ curl -X POST "http://localhost:5000/api/dart/cache/clear" \
 
 시작하기 전 확인:
 
-- [ ] Python 3.8+ 설치됨
-- [ ] `.env` 파일에 `DART_API_KEY` 설정됨
 - [ ] `pip install -r config/requirements.txt` 실행됨
 - [ ] `python backend/dart/collect_companies.py` 실행됨
 - [ ] `data/stocks.db` 파일 생성됨
