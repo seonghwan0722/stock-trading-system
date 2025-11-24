@@ -59,7 +59,7 @@ def get_all_stocks():
             "market_stats": {"KOSPI": 800, "KOSDAQ": 400}
         }
     """
-    if not dart_companies:
+    if dart_companies is None:
         return jsonify({'success': False, 'error': 'Database not available'}), 503
 
     try:
@@ -111,7 +111,7 @@ def search_stocks():
             "query": "삼성"
         }
     """
-    if not dart_companies:
+    if dart_companies is None:
         return jsonify({'success': False, 'error': 'Database not available'}), 503
 
     try:

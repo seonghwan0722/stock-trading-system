@@ -21,6 +21,7 @@ from backend.auth import token_required, get_auth_manager
 from backend.database.mongo_db import get_database, get_user_manager, get_trading_manager
 from backend.api.finnhub_client import get_finnhub_client
 from backend.api.alphavantage_client import get_alphavantage_client
+from backend.api.kiwoom_rest_client import get_kiwoom_rest_client
 from backend.routes.user_routes import user_bp
 
 # Existing imports
@@ -166,7 +167,44 @@ def login():
 @app.route('/api/account/balance', methods=['GET'])
 @token_required
 def get_balance(current_user):
-    """계좌 잔고 조회 - MongoDB에서 포트폴리오 조회"""
+    """계좌 잔고 조회 - 키움 REST API에서 실제 계좌 정보 가져오기"""
+    try:
+        # 키움 REST API 클라이언트 가져오기
+        kiwoom_client = get_kiwoom_rest_client(is_mock=True)
+
+        # 토큰이 없으면 발급
+        if not kiwoom_client.access_token:
+            token_result = kiwoom_client.get_access_token()
+            if not token_result.get('success'):
+                # 토큰 발급 실패 시 MongoDB 데이터 사용
+                app.logger.warning('키움 API 토큰 발급 실패, MongoDB 데이터 사용')
+                return get_balance_from_mongodb(current_user)
+
+        # 키움 API에서 계좌 정보 가져오기
+        balance_result = kiwoom_client.get_account_balance()
+
+        if balance_result.get('success'):
+            return jsonify({
+                'success': True,
+                'total_balance': balance_result.get('total_balance', 0),
+                'total_purchase': balance_result.get('total_purchase', 0),
+                'total_profit_loss': balance_result.get('total_profit_loss', 0),
+                'available_cash': balance_result.get('total_balance', 0) - balance_result.get('total_purchase', 0),
+                'positions': balance_result.get('positions', [])
+            })
+        else:
+            # 키움 API 실패 시 MongoDB 데이터 사용
+            app.logger.warning(f'키움 API 조회 실패: {balance_result.get("message")}, MongoDB 데이터 사용')
+            return get_balance_from_mongodb(current_user)
+
+    except Exception as e:
+        app.logger.error(f'키움 API 오류: {e}', exc_info=True)
+        # 오류 발생 시 MongoDB 데이터 사용
+        return get_balance_from_mongodb(current_user)
+
+
+def get_balance_from_mongodb(current_user):
+    """MongoDB에서 포트폴리오 조회 (백업용)"""
     if not trading_manager:
         return jsonify({'success': False, 'error': 'Database not available'}), 503
 
@@ -185,13 +223,73 @@ def get_balance(current_user):
 
         return jsonify({
             'success': True,
-            'total_value': total_value,
+            'total_balance': total_value,
+            'total_purchase': sum(p['avg_price'] * p['quantity'] for p in portfolio),
+            'total_profit_loss': sum(p.get('profit_loss', 0) for p in portfolio),
+            'available_cash': 0,
             'positions': portfolio
         })
 
     except Exception as e:
-        app.logger.error(f'Error getting balance: {e}', exc_info=True)
+        app.logger.error(f'Error getting balance from MongoDB: {e}', exc_info=True)
         return jsonify({'success': False, 'error': 'Failed to retrieve balance'}), 500
+
+
+@app.route('/api/stocks/hot', methods=['GET'])
+@token_required
+def get_hot_stocks(current_user):
+    """실시간 인기 주식 조회"""
+    try:
+        # 한국 인기 주식 (코스피 대장주)
+        hot_stocks = [
+            {'code': '005930', 'name': '삼성전자', 'market': 'KOSPI'},
+            {'code': '000660', 'name': 'SK하이닉스', 'market': 'KOSPI'},
+            {'code': '035420', 'name': 'NAVER', 'market': 'KOSPI'},
+            {'code': '005380', 'name': '현대차', 'market': 'KOSPI'},
+            {'code': '006400', 'name': '삼성SDI', 'market': 'KOSPI'},
+            {'code': '035720', 'name': '카카오', 'market': 'KOSDAQ'},
+            {'code': '051910', 'name': 'LG화학', 'market': 'KOSPI'},
+            {'code': '068270', 'name': '셀트리온', 'market': 'KOSDAQ'},
+        ]
+
+        # 키움 REST API로 각 종목의 현재가 조회
+        kiwoom_client = get_kiwoom_rest_client(is_mock=True)
+        if not kiwoom_client.access_token:
+            kiwoom_client.get_access_token()
+
+        enriched_stocks = []
+        for stock in hot_stocks:
+            price_result = kiwoom_client.get_stock_price(stock['code'])
+            if price_result.get('success'):
+                enriched_stocks.append({
+                    'code': stock['code'],
+                    'name': stock['name'],
+                    'market': stock['market'],
+                    'current_price': price_result.get('current_price', 0),
+                    'change_rate': price_result.get('change_rate', 0),
+                    'volume': price_result.get('volume', 0)
+                })
+            else:
+                # API 실패 시 기본 정보만 반환
+                enriched_stocks.append(stock)
+
+        return jsonify({
+            'success': True,
+            'stocks': enriched_stocks
+        })
+
+    except Exception as e:
+        app.logger.error(f'인기 주식 조회 오류: {e}', exc_info=True)
+        # 오류 시 기본 리스트 반환
+        return jsonify({
+            'success': True,
+            'stocks': [
+                {'code': '005930', 'name': '삼성전자', 'market': 'KOSPI'},
+                {'code': '000660', 'name': 'SK하이닉스', 'market': 'KOSPI'},
+                {'code': '035420', 'name': 'NAVER', 'market': 'KOSPI'},
+                {'code': '005380', 'name': '현대차', 'market': 'KOSPI'},
+            ]
+        })
 
 
 @app.route('/api/account/positions', methods=['GET'])
@@ -432,7 +530,7 @@ def get_news_summary():
 
 @app.route('/api/news/sentiment', methods=['GET'])
 @token_required
-def get_market_sentiment():
+def get_market_sentiment(current_user):
     """시장 심리 분석"""
     news_list = news_summarizer.gather_all_news()
     sentiment = news_summarizer.get_market_sentiment(news_list)
@@ -532,7 +630,7 @@ def get_stock_recommendations():
 
 @app.route('/api/news/category/<category>', methods=['GET'])
 @token_required
-def get_news_by_category(category):
+def get_news_by_category(current_user, category):
     """카테고리별 뉴스 조회"""
     category_mapping = {
         'popular': '인기',
