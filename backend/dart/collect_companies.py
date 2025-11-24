@@ -111,7 +111,7 @@ class DARTCompanyCollector:
 
     def save_to_database(self, companies: List[Dict]) -> int:
         """MongoDB에 종목 데이터 저장"""
-        if not self.dart_companies:
+        if self.dart_companies is None:
             logger.error("MongoDB connection not available")
             return 0
 
