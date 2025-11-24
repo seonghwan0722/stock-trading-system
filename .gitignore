@@ -89,3 +89,7 @@ coverage.xml
 .claude/skills/
 .claude/commands/
 !.claude/settings.local.json
+
+
+61559514_appkey.txt
+61559514_secretkey.txt

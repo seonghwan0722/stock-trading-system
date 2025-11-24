@@ -48,7 +48,8 @@
       "Bash(if [ -f \"backend/database/stock_db.py\" ])",
       "Bash(then cp backend/database/stock_db.py backup_old_apis/)",
       "Bash(C:UsersjasanAppDataLocalProgramsPythonPython312python.exe -m pip install flask-limiter flask-talisman marshmallow pymongo bcrypt cryptography finnhub-python alpha-vantage)",
-      "Bash(timeout 5 sleep:*)"
+      "Bash(timeout 5 sleep:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
