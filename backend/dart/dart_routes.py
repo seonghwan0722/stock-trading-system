@@ -72,6 +72,17 @@ def get_all_stocks():
 
         stocks = list(dart_companies.find(query, {'_id': 0}).limit(5000))
 
+        # Transform data to match frontend expectations
+        transformed_stocks = []
+        for stock in stocks:
+            transformed_stocks.append({
+                'stock_code': stock.get('stock_code'),
+                'corp_code': stock.get('corp_code'),
+                'company_name': stock.get('name'),  # Transform 'name' to 'company_name'
+                'market_type': stock.get('market_type', 'UNKNOWN'),
+                'modify_date': stock.get('modify_date')
+            })
+
         # Calculate market stats
         market_stats = {}
         for market in ['KOSPI', 'KOSDAQ', 'KONEX']:
@@ -81,8 +92,8 @@ def get_all_stocks():
 
         return jsonify({
             'success': True,
-            'data': stocks,
-            'count': len(stocks),
+            'data': transformed_stocks,
+            'count': len(transformed_stocks),
             'market_stats': market_stats
         })
 
@@ -136,10 +147,22 @@ def search_stocks():
 
         results = list(dart_companies.find(search_query, {'_id': 0}).limit(min(limit, 100)))
 
+        # Transform data to match frontend expectations
+        # Database stores 'name', but frontend expects 'company_name'
+        transformed_results = []
+        for result in results:
+            transformed_results.append({
+                'stock_code': result.get('stock_code'),
+                'corp_code': result.get('corp_code'),
+                'company_name': result.get('name'),  # Transform 'name' to 'company_name'
+                'market_type': result.get('market_type', 'UNKNOWN'),
+                'modify_date': result.get('modify_date')
+            })
+
         return jsonify({
             'success': True,
-            'data': results,
-            'count': len(results),
+            'data': transformed_results,
+            'count': len(transformed_results),
             'query': query
         })
 
@@ -167,7 +190,7 @@ def get_stock_by_code(stock_code: str):
         }
     """
     try:
-        stock = dart_companies.find_one({'stock_code': stock_code})
+        stock = dart_companies.find_one({'stock_code': stock_code}, {'_id': 0})
 
         if not stock:
             return jsonify({
@@ -175,9 +198,18 @@ def get_stock_by_code(stock_code: str):
                 'message': '종목을 찾을 수 없습니다.'
             }), 404
 
+        # Transform data to match frontend expectations
+        transformed_stock = {
+            'stock_code': stock.get('stock_code'),
+            'corp_code': stock.get('corp_code'),
+            'company_name': stock.get('name'),  # Transform 'name' to 'company_name'
+            'market_type': stock.get('market_type', 'UNKNOWN'),
+            'modify_date': stock.get('modify_date')
+        }
+
         return jsonify({
             'success': True,
-            'data': stock
+            'data': transformed_stock
         })
 
     except Exception as e:
