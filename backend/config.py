@@ -50,6 +50,11 @@ class Config:
     # Polygon.io: Real-time US stocks data (5 calls/min FREE)
     POLYGON_API_KEY = os.getenv('POLYGON_API_KEY', '')
 
+    # Kiwoom REST API: Korean stock trading
+    KIWOOM_APP_KEY = os.getenv('KIWOOM_APP_KEY', '')
+    KIWOOM_SECRET_KEY = os.getenv('KIWOOM_SECRET_KEY', '')
+    KIWOOM_ACCOUNT_NO = os.getenv('KIWOOM_ACCOUNT_NO', '')
+
     # Telegram Configuration
     TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')
     TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID', '')
